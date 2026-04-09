@@ -1,0 +1,28 @@
+Roteiro de construção
+Fase 1 — Configuração do ambiente (hoje)
+    Instalar Python, PostgreSQL, dependências
+    Registrar o App no Azure AD para autenticar na API do Power BI
+
+Fase 2 — Backend Flask
+    Models: users, reports, permissions, access_logs
+    Autenticação com JWT + bcrypt
+    Endpoint que gera o embed token chamando a API do Power BI
+
+Fase 3 — Frontend
+    Tela de login
+    Dashboard com lista de relatórios permitidos para o usuário
+    Página de visualização com o iframe do Power BI
+    Painel admin: gerenciar usuários, permissões e ver logs
+
+A estrutura será essa:
+portal-bi/
+├── venv/
+├── .env
+├── app.py          ← configuração principal do Flask
+├── models.py       ← tabelas do banco de dados
+├── auth.py         ← login, JWT
+├── powerbi.py      ← integração com a API do Power BI
+├── routes.py       ← todas as rotas
+└── templates/
+    ├── login.html
+    ├── dashboard.html
