@@ -104,13 +104,14 @@
           <td>{{ r.created_at.strftime('%d/%m/%Y') }}</td>
           <td>
             <div class="actions">
-              <button class="btn btn-outline btn-sm"
+                <button class="btn btn-outline btn-sm"
                 onclick="openEdit(
-                  {{ r.id }},
-                  '{{ r.name }}',
-                  '{{ r.description or '' }}',
-                  '{{ r.report_id }}',
-                  '{{ r.workspace_id }}'
+                    {{ r.id }},
+                    '{{ r.name }}',
+                    '{{ r.description or '' }}',
+                    '{{ r.report_id }}',
+                    '{{ r.workspace_id }}',
+                    {{ 'true' if r.has_rls else 'false' }}
                 )">Editar</button>
               <form method="POST" action="/admin/reports/toggle/{{ r.id }}" style="display:inline">
                 <button class="btn btn-outline btn-sm" type="submit">
@@ -151,6 +152,13 @@
         <label>Report ID</label>
         <input type="text" name="report_id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" required>
         <p class="hint">URL do Power BI: .../reports/<strong>REPORT-ID</strong>/...</p>
+        <label>Configurações</label>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;font-size:14px;color:#444">
+        <input type="checkbox" name="has_rls" id="has_rls">
+        <label for="has_rls" style="margin:0;font-weight:400">
+            Este relatório usa Row Level Security (RLS)
+        </label>
+        </div>
         <div class="modal-actions">
           <button type="button" class="btn btn-outline" onclick="closeModal('modal-create')">Cancelar</button>
           <button type="submit" class="btn btn-primary">Salvar</button>
@@ -173,6 +181,13 @@
         <input type="text" name="workspace_id" id="edit-workspace" required>
         <label>Report ID</label>
         <input type="text" name="report_id" id="edit-report" required>
+        <label>Configurações</label>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;font-size:14px;color:#444">
+        <input type="checkbox" name="has_rls" id="edit-has-rls">
+        <label for="edit-has-rls" style="margin:0;font-weight:400">
+            Este relatório usa Row Level Security (RLS)
+        </label>
+        </div>
         <div class="modal-actions">
           <button type="button" class="btn btn-outline" onclick="closeModal('modal-edit')">Cancelar</button>
           <button type="submit" class="btn btn-primary">Salvar alterações</button>
@@ -188,13 +203,14 @@
     function closeModal(id) {
       document.getElementById(id).classList.remove('active');
     }
-    function openEdit(id, name, description, reportId, workspaceId) {
-      document.getElementById('form-edit').action = '/admin/reports/edit/' + id;
-      document.getElementById('edit-name').value        = name;
-      document.getElementById('edit-description').value = description;
-      document.getElementById('edit-workspace').value   = workspaceId;
-      document.getElementById('edit-report').value      = reportId;
-      openModal('modal-edit');
+    function openEdit(id, name, description, reportId, workspaceId, hasRls) {
+    document.getElementById('form-edit').action    = '/admin/reports/edit/' + id;
+    document.getElementById('edit-name').value     = name;
+    document.getElementById('edit-description').value = description;
+    document.getElementById('edit-workspace').value   = workspaceId;
+    document.getElementById('edit-report').value      = reportId;
+    document.getElementById('edit-has-rls').checked   = hasRls;
+    openModal('modal-edit');
     }
     // Fecha modal clicando fora
     document.querySelectorAll('.modal-overlay').forEach(function(overlay) {

@@ -21,7 +21,7 @@ def get_access_token():
         return result["access_token"]
     raise Exception(f"Erro ao obter token: {result.get('error_description')}")
 
-def get_embed_token(workspace_id: str, report_id: str, user=None) -> dict:
+def get_embed_token(workspace_id: str, report_id: str, user=None, has_rls: bool = False) -> dict:
     access_token = get_access_token()
     headers = {
         "Authorization": f"Bearer {access_token}",
@@ -32,36 +32,29 @@ def get_embed_token(workspace_id: str, report_id: str, user=None) -> dict:
     report_url = f"{PBI_API}/groups/{workspace_id}/reports/{report_id}"
     report_resp = requests.get(report_url, headers=headers)
     report_info = report_resp.json()
-    embed_url   = report_info.get("embedUrl")
-    dataset_id  = report_info.get("datasetId")
+    embed_url  = report_info.get("embedUrl")
+    dataset_id = report_info.get("datasetId")
 
-    # Monta identidade RLS baseada no perfil do usuário
-    if user and user.role == 'gerente' and user.empresa_revenda:
-        # Gerente vê apenas a própria revenda
-        identities = [
-            {
-                "username": user.empresa_revenda,  # ex: "1.18"
+    body = {"accessLevel": "view"}
+
+    if has_rls:
+        if user and user.role == 'gerente' and user.empresa_revenda:
+            identities = [{
+                "username": user.empresa_revenda,
                 "roles": ["empresa_revenda"],
                 "datasets": [dataset_id]
-            }
-        ]
-    else:
-        # Admin e diretor: identidade obrigatória mas com role que vê tudo
-        identities = [
-            {
+            }]
+        else:
+            identities = [{
                 "username": user.email if user else "admin",
                 "roles": ["diretor"],
                 "datasets": [dataset_id]
-            }
-        ]
+            }]
+        body["identities"] = identities
 
-    body = {
-        "accessLevel": "view",
-        "identities": identities
-    }
+    print("BODY ENVIADO:", body)
 
-    # Gera o embed token
-    token_url = f"{PBI_API}/groups/{workspace_id}/reports/{report_id}/GenerateToken"
+    token_url  = f"{PBI_API}/groups/{workspace_id}/reports/{report_id}/GenerateToken"
     token_resp = requests.post(token_url, headers=headers, json=body)
     print("TOKEN JSON:", token_resp.json())
     embed_token = token_resp.json().get("token")

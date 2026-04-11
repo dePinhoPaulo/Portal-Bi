@@ -23,6 +23,7 @@ def init_models(db):
         workspace_id = db.Column(db.String(100), nullable=False)
         active       = db.Column(db.Boolean, default=True)
         created_at   = db.Column(db.DateTime, default=datetime.utcnow)
+        has_rls      = db.Column(db.Boolean, default=False)
 
     class Permission(db.Model):
         __tablename__ = "permissions"
