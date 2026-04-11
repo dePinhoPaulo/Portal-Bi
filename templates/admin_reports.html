@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Relatórios — Portal BI</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; }
+    nav {
+      background: #1a1a2e; color: #fff; padding: 0 32px; height: 56px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    nav .brand { font-size: 16px; font-weight: 600; }
+    nav .nav-right { display: flex; gap: 20px; align-items: center; }
+    nav a { color: #aaa; text-decoration: none; font-size: 13px; }
+    nav a:hover { color: #fff; }
+    .container { max-width: 1000px; margin: 40px auto; padding: 0 24px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .header h1 { font-size: 20px; font-weight: 600; color: #1a1a2e; }
+    .btn { padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; text-decoration: none; border: none; }
+    .btn-primary { background: #4f46e5; color: #fff; }
+    .btn-primary:hover { background: #4338ca; }
+    .btn-outline { border: 1px solid #ddd; background: #fff; color: #444; }
+    .btn-outline:hover { background: #f5f5f5; }
+    .btn-danger { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+    .btn-danger:hover { background: #fee2e2; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    th { background: #f8f8f8; padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #888; text-transform: uppercase; }
+    td { padding: 14px 16px; font-size: 14px; color: #333; border-top: 1px solid #f0f0f0; vertical-align: middle; }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+    .badge-active { background: #f0fdf4; color: #166534; }
+    .badge-inactive { background: #fef2f2; color: #dc2626; }
+    .mono { font-family: monospace; font-size: 12px; color: #666; background: #f5f5f5; padding: 2px 6px; border-radius: 4px; }
+    .actions { display: flex; gap: 8px; }
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4); z-index: 100;
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: #fff; border-radius: 12px; padding: 36px 32px;
+      width: 100%; max-width: 520px; box-shadow: 0 8px 40px rgba(0,0,0,0.15);
+    }
+    .modal h2 { font-size: 18px; font-weight: 600; margin-bottom: 6px; color: #1a1a2e; }
+    .modal p { font-size: 13px; color: #888; margin-bottom: 24px; }
+    label { display: block; font-size: 13px; font-weight: 500; color: #444; margin-bottom: 6px; }
+    input[type=text], textarea {
+      width: 100%; padding: 10px 14px; border: 1px solid #ddd;
+      border-radius: 8px; font-size: 14px; margin-bottom: 16px;
+      outline: none; font-family: inherit;
+    }
+    input:focus, textarea:focus { border-color: #4f46e5; }
+    textarea { resize: vertical; min-height: 72px; }
+    .hint { font-size: 12px; color: #aaa; margin-top: -12px; margin-bottom: 16px; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; }
+    .empty { text-align: center; padding: 60px 20px; color: #aaa; }
+  </style>
+</head>
+<body>
+  <nav>
+    <span class="brand">Portal BI</span>
+    <div class="nav-right">
+      <a href="/dashboard">Dashboard</a>
+      <a href="/admin/users">Usuários</a>
+      <a href="/admin/permissions">Permissões</a>
+      <a href="/admin/logs">Logs</a>
+      <a href="/logout">Sair</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="header">
+      <h1>Relatórios</h1>
+      <button class="btn btn-primary" onclick="openModal('modal-create')">+ Novo relatório</button>
+    </div>
+
+    {% if reports %}
+    <table>
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Descrição</th>
+          <th>Report ID</th>
+          <th>Status</th>
+          <th>Criado em</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in reports %}
+        <tr>
+          <td><strong>{{ r.name }}</strong></td>
+          <td style="color:#888">{{ r.description or '—' }}</td>
+          <td><span class="mono">{{ r.report_id[:8] }}...</span></td>
+          <td>
+            {% if r.active %}
+            <span class="badge badge-active">Ativo</span>
+            {% else %}
+            <span class="badge badge-inactive">Inativo</span>
+            {% endif %}
+          </td>
+          <td>{{ r.created_at.strftime('%d/%m/%Y') }}</td>
+          <td>
+            <div class="actions">
+              <button class="btn btn-outline btn-sm"
+                onclick="openEdit(
+                  {{ r.id }},
+                  '{{ r.name }}',
+                  '{{ r.description or '' }}',
+                  '{{ r.report_id }}',
+                  '{{ r.workspace_id }}'
+                )">Editar</button>
+              <form method="POST" action="/admin/reports/toggle/{{ r.id }}" style="display:inline">
+                <button class="btn btn-outline btn-sm" type="submit">
+                  {% if r.active %}Desativar{% else %}Ativar{% endif %}
+                </button>
+              </form>
+              <form method="POST" action="/admin/reports/delete/{{ r.id }}" style="display:inline"
+                onsubmit="return confirm('Excluir este relatório? As permissões associadas também serão removidas.')">
+                <button class="btn btn-danger btn-sm" type="submit">Excluir</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty">
+      <div style="font-size:48px">📊</div>
+      <p style="margin-top:12px">Nenhum relatório cadastrado ainda.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Modal criar -->
+  <div class="modal-overlay" id="modal-create">
+    <div class="modal">
+      <h2>Novo relatório</h2>
+      <p>Cole os IDs encontrados na URL do relatório no Power BI.</p>
+      <form method="POST" action="/admin/reports/create">
+        <label>Nome do relatório</label>
+        <input type="text" name="name" placeholder="Ex: Vendas por Revenda" required autofocus>
+        <label>Descrição <span style="color:#aaa;font-weight:400">(opcional)</span></label>
+        <textarea name="description" placeholder="Breve descrição do relatório"></textarea>
+        <label>Workspace ID</label>
+        <input type="text" name="workspace_id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" required>
+        <p class="hint">URL do Power BI: .../groups/<strong>WORKSPACE-ID</strong>/reports/...</p>
+        <label>Report ID</label>
+        <input type="text" name="report_id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" required>
+        <p class="hint">URL do Power BI: .../reports/<strong>REPORT-ID</strong>/...</p>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-create')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal editar -->
+  <div class="modal-overlay" id="modal-edit">
+    <div class="modal">
+      <h2>Editar relatório</h2>
+      <p>Atualize as informações do relatório.</p>
+      <form method="POST" id="form-edit">
+        <label>Nome do relatório</label>
+        <input type="text" name="name" id="edit-name" required>
+        <label>Descrição</label>
+        <textarea name="description" id="edit-description"></textarea>
+        <label>Workspace ID</label>
+        <input type="text" name="workspace_id" id="edit-workspace" required>
+        <label>Report ID</label>
+        <input type="text" name="report_id" id="edit-report" required>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-edit')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar alterações</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function openModal(id) {
+      document.getElementById(id).classList.add('active');
+    }
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+    function openEdit(id, name, description, reportId, workspaceId) {
+      document.getElementById('form-edit').action = '/admin/reports/edit/' + id;
+      document.getElementById('edit-name').value        = name;
+      document.getElementById('edit-description').value = description;
+      document.getElementById('edit-workspace').value   = workspaceId;
+      document.getElementById('edit-report').value      = reportId;
+      openModal('modal-edit');
+    }
+    // Fecha modal clicando fora
+    document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
+      overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) overlay.classList.remove('active');
+      });
+    });
+  </script>
+</body>
+</html>

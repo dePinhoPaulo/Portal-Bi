@@ -165,3 +165,73 @@ def init_routes(app, db, User, Report, Permission, AccessLog):
             db.session.commit()
             return redirect(url_for("login"))
         return render_template("setup.html")
+    
+    @app.route("/admin/reports")
+    @jwt_required()
+    def admin_reports():
+        user_id = int(get_jwt_identity())
+        user = User.query.get(user_id)
+        if not user.is_admin:
+            return redirect(url_for("dashboard"))
+        reports = Report.query.order_by(Report.created_at.desc()).all()
+        return render_template("admin_reports.html", user=user, reports=reports)
+
+    @app.route("/admin/reports/create", methods=["POST"])
+    @jwt_required()
+    def admin_create_report():
+        user_id = int(get_jwt_identity())
+        admin = User.query.get(user_id)
+        if not admin.is_admin:
+            return jsonify({"error": "Sem permissão"}), 403
+        data = request.form
+        new_report = Report(
+            name=data["name"],
+            description=data.get("description", ""),
+            report_id=data["report_id"],
+            workspace_id=data["workspace_id"],
+            active=True
+        )
+        db.session.add(new_report)
+        db.session.commit()
+        return redirect(url_for("admin_reports"))
+
+    @app.route("/admin/reports/toggle/<int:report_id>", methods=["POST"])
+    @jwt_required()
+    def admin_toggle_report(report_id):
+        user_id = int(get_jwt_identity())
+        admin = User.query.get(user_id)
+        if not admin.is_admin:
+            return jsonify({"error": "Sem permissão"}), 403
+        report = Report.query.get_or_404(report_id)
+        report.active = not report.active
+        db.session.commit()
+        return redirect(url_for("admin_reports"))
+
+    @app.route("/admin/reports/delete/<int:report_id>", methods=["POST"])
+    @jwt_required()
+    def admin_delete_report(report_id):
+        user_id = int(get_jwt_identity())
+        admin = User.query.get(user_id)
+        if not admin.is_admin:
+            return jsonify({"error": "Sem permissão"}), 403
+        report = Report.query.get_or_404(report_id)
+        Permission.query.filter_by(report_id=report_id).delete()
+        db.session.delete(report)
+        db.session.commit()
+        return redirect(url_for("admin_reports"))
+
+    @app.route("/admin/reports/edit/<int:report_id>", methods=["POST"])
+    @jwt_required()
+    def admin_edit_report(report_id):
+        user_id = int(get_jwt_identity())
+        admin = User.query.get(user_id)
+        if not admin.is_admin:
+            return jsonify({"error": "Sem permissão"}), 403
+        report = Report.query.get_or_404(report_id)
+        data = request.form
+        report.name         = data["name"]
+        report.description  = data.get("description", "")
+        report.report_id    = data["report_id"]
+        report.workspace_id = data["workspace_id"]
+        db.session.commit()
+        return redirect(url_for("admin_reports"))
