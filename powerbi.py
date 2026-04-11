@@ -21,7 +21,7 @@ def get_access_token():
         return result["access_token"]
     raise Exception(f"Erro ao obter token: {result.get('error_description')}")
 
-def get_embed_token(workspace_id: str, report_id: str) -> dict:
+def get_embed_token(workspace_id: str, report_id: str, user=None) -> dict:
     access_token = get_access_token()
     headers = {
         "Authorization": f"Bearer {access_token}",
@@ -31,21 +31,43 @@ def get_embed_token(workspace_id: str, report_id: str) -> dict:
     # Busca detalhes do relatório
     report_url = f"{PBI_API}/groups/{workspace_id}/reports/{report_id}"
     report_resp = requests.get(report_url, headers=headers)
-    print("STATUS REPORT:", report_resp.status_code)
-    print("REPORT JSON:", report_resp.json())
     report_info = report_resp.json()
-    embed_url = report_info.get("embedUrl")
+    embed_url   = report_info.get("embedUrl")
+    dataset_id  = report_info.get("datasetId")
+
+    # Monta identidade RLS baseada no perfil do usuário
+    if user and user.role == 'gerente' and user.empresa_revenda:
+        # Gerente vê apenas a própria revenda
+        identities = [
+            {
+                "username": user.empresa_revenda,  # ex: "1.18"
+                "roles": ["empresa_revenda"],
+                "datasets": [dataset_id]
+            }
+        ]
+    else:
+        # Admin e diretor: identidade obrigatória mas com role que vê tudo
+        identities = [
+            {
+                "username": user.email if user else "admin",
+                "roles": ["diretor"],
+                "datasets": [dataset_id]
+            }
+        ]
+
+    body = {
+        "accessLevel": "view",
+        "identities": identities
+    }
 
     # Gera o embed token
     token_url = f"{PBI_API}/groups/{workspace_id}/reports/{report_id}/GenerateToken"
-    body = {"accessLevel": "view"}
     token_resp = requests.post(token_url, headers=headers, json=body)
-    print("STATUS TOKEN:", token_resp.status_code)
     print("TOKEN JSON:", token_resp.json())
     embed_token = token_resp.json().get("token")
 
     return {
         "embed_token": embed_token,
-        "embed_url": embed_url,
-        "report_id": report_id
+        "embed_url":   embed_url,
+        "report_id":   report_id
     }

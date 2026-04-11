@@ -67,7 +67,7 @@ def init_routes(app, db, User, Report, Permission, AccessLog):
         )
         db.session.add(log)
         db.session.commit()
-        embed_data = get_embed_token(report.workspace_id, report.report_id)
+        embed_data = get_embed_token(report.workspace_id, report.report_id, user=user)
         return render_template("report.html", user=user, report=report, embed=embed_data)
 
     @app.route("/admin/users")
@@ -92,7 +92,9 @@ def init_routes(app, db, User, Report, Permission, AccessLog):
             name=data["name"],
             email=data["email"],
             password_hash=hash_password(data["password"]),
-            is_admin=data.get("is_admin") == "on"
+            is_admin=data.get("is_admin") == "on",
+            role=data.get("role", "user"),
+            empresa_revenda=data.get("empresa_revenda") or None
         )
         db.session.add(new_user)
         db.session.commit()
