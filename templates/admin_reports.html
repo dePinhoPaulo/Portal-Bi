@@ -14,47 +14,58 @@
     nav .nav-right { display: flex; gap: 20px; align-items: center; }
     nav a { color: #aaa; text-decoration: none; font-size: 13px; }
     nav a:hover { color: #fff; }
-    .container { max-width: 1000px; margin: 40px auto; padding: 0 24px; }
+    .container { max-width: 1100px; margin: 40px auto; padding: 0 24px; }
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
     .header h1 { font-size: 20px; font-weight: 600; color: #1a1a2e; }
-    .btn { padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; text-decoration: none; border: none; }
-    .btn-primary { background: #4f46e5; color: #fff; }
-    .btn-primary:hover { background: #4338ca; }
-    .btn-outline { border: 1px solid #ddd; background: #fff; color: #444; }
-    .btn-outline:hover { background: #f5f5f5; }
-    .btn-danger { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
-    .btn-danger:hover { background: #fee2e2; }
+    .btn { padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; text-decoration: none; border: none; display: inline-block; }
+    .btn-primary  { background: #4f46e5; color: #fff; }
+    .btn-primary:hover  { background: #4338ca; }
+    .btn-outline  { border: 1px solid #ddd; background: #fff; color: #444; }
+    .btn-outline:hover  { background: #f5f5f5; }
+    .btn-danger   { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+    .btn-danger:hover   { background: #fee2e2; }
+    .btn-rls      { background: #ede9fe; color: #5b21b6; border: 1px solid #ddd6fe; }
+    .btn-rls:hover      { background: #ddd6fe; }
     .btn-sm { padding: 6px 12px; font-size: 12px; }
     table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
     th { background: #f8f8f8; padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #888; text-transform: uppercase; }
     td { padding: 14px 16px; font-size: 14px; color: #333; border-top: 1px solid #f0f0f0; vertical-align: middle; }
     .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
-    .badge-active { background: #f0fdf4; color: #166534; }
+    .badge-active   { background: #f0fdf4; color: #166534; }
     .badge-inactive { background: #fef2f2; color: #dc2626; }
+    .badge-rls      { background: #ede9fe; color: #5b21b6; }
+    .badge-no-rls   { background: #f1f5f9; color: #94a3b8; }
     .mono { font-family: monospace; font-size: 12px; color: #666; background: #f5f5f5; padding: 2px 6px; border-radius: 4px; }
-    .actions { display: flex; gap: 8px; }
+    .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .rls-detail { font-size: 11px; color: #7c3aed; margin-top: 3px; }
     .modal-overlay {
       display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,0.4); z-index: 100;
-      align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.45); z-index: 100;
+      align-items: flex-start; justify-content: center;
+      padding: 40px 16px; overflow-y: auto;
     }
     .modal-overlay.active { display: flex; }
     .modal {
       background: #fff; border-radius: 12px; padding: 36px 32px;
-      width: 100%; max-width: 520px; box-shadow: 0 8px 40px rgba(0,0,0,0.15);
+      width: 100%; max-width: 540px; box-shadow: 0 8px 40px rgba(0,0,0,0.15);
+      margin: auto;
     }
     .modal h2 { font-size: 18px; font-weight: 600; margin-bottom: 6px; color: #1a1a2e; }
-    .modal p { font-size: 13px; color: #888; margin-bottom: 24px; }
+    .modal .modal-sub { font-size: 13px; color: #888; margin-bottom: 24px; }
     label { display: block; font-size: 13px; font-weight: 500; color: #444; margin-bottom: 6px; }
-    input[type=text], textarea {
+    input[type=text], textarea, select {
       width: 100%; padding: 10px 14px; border: 1px solid #ddd;
       border-radius: 8px; font-size: 14px; margin-bottom: 16px;
-      outline: none; font-family: inherit;
+      outline: none; font-family: inherit; background: #fff;
     }
-    input:focus, textarea:focus { border-color: #4f46e5; }
-    textarea { resize: vertical; min-height: 72px; }
+    input:focus, textarea:focus, select:focus { border-color: #4f46e5; }
+    textarea { resize: vertical; min-height: 64px; }
     .hint { font-size: 12px; color: #aaa; margin-top: -12px; margin-bottom: 16px; }
+    .checkbox-row { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; font-size: 14px; color: #444; }
     .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; }
+    .divider { border: none; border-top: 1px solid #f0f0f0; margin: 20px 0; }
+    .rls-section { background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .rls-section-title { font-size: 13px; font-weight: 600; color: #6d28d9; margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
     .empty { text-align: center; padding: 60px 20px; color: #aaa; }
   </style>
 </head>
@@ -64,6 +75,7 @@
     <div class="nav-right">
       <a href="/dashboard">Dashboard</a>
       <a href="/admin/users">Usuários</a>
+      <a href="/admin/groups">Grupos</a>
       <a href="/admin/permissions">Permissões</a>
       <a href="/admin/logs">Logs</a>
       <a href="/logout">Sair</a>
@@ -81,8 +93,8 @@
       <thead>
         <tr>
           <th>Nome</th>
-          <th>Descrição</th>
           <th>Report ID</th>
+          <th>RLS</th>
           <th>Status</th>
           <th>Criado em</th>
           <th>Ações</th>
@@ -91,9 +103,27 @@
       <tbody>
         {% for r in reports %}
         <tr>
-          <td><strong>{{ r.name }}</strong></td>
-          <td style="color:#888">{{ r.description or '—' }}</td>
+          <td>
+            <strong>{{ r.name }}</strong>
+            {% if r.description %}
+            <div style="font-size:12px;color:#888;margin-top:2px">{{ r.description }}</div>
+            {% endif %}
+          </td>
           <td><span class="mono">{{ r.report_id[:8] }}...</span></td>
+          <td>
+            {% if r.has_rls and r.rls %}
+              <span class="badge badge-rls">RLS ativo</span>
+              <div class="rls-detail">
+                Role: <strong>{{ r.rls.role_name }}</strong> ·
+                Filtro: <strong>{{ r.rls.filter_source }}</strong>
+              </div>
+            {% elif r.has_rls %}
+              <span class="badge badge-rls">RLS ativo</span>
+              <div class="rls-detail" style="color:#f59e0b">⚠ Configuração pendente</div>
+            {% else %}
+              <span class="badge badge-no-rls">Sem RLS</span>
+            {% endif %}
+          </td>
           <td>
             {% if r.active %}
             <span class="badge badge-active">Ativo</span>
@@ -104,22 +134,29 @@
           <td>{{ r.created_at.strftime('%d/%m/%Y') }}</td>
           <td>
             <div class="actions">
-                <button class="btn btn-outline btn-sm"
-                onclick="openEdit(
-                    {{ r.id }},
-                    '{{ r.name }}',
-                    '{{ r.description or '' }}',
-                    '{{ r.report_id }}',
-                    '{{ r.workspace_id }}',
-                    {{ 'true' if r.has_rls else 'false' }}
-                )">Editar</button>
+              <button class="btn btn-outline btn-sm" onclick="openEdit(
+                {{ r.id }},
+                '{{ r.name }}',
+                '{{ r.description or '' }}',
+                '{{ r.report_id }}',
+                '{{ r.workspace_id }}',
+                {{ 'true' if r.has_rls else 'false' }}
+              )">Editar</button>
+              <button class="btn btn-rls btn-sm" onclick="openRLS(
+                {{ r.id }},
+                '{{ r.name }}',
+                '{{ r.rls.role_name if r.rls else '' }}',
+                '{{ r.rls.filter_source if r.rls else '' }}',
+                '{{ r.rls.description if r.rls else '' }}',
+                {{ 'true' if r.rls else 'false' }}
+              )">RLS</button>
               <form method="POST" action="/admin/reports/toggle/{{ r.id }}" style="display:inline">
                 <button class="btn btn-outline btn-sm" type="submit">
                   {% if r.active %}Desativar{% else %}Ativar{% endif %}
                 </button>
               </form>
               <form method="POST" action="/admin/reports/delete/{{ r.id }}" style="display:inline"
-                onsubmit="return confirm('Excluir este relatório? As permissões associadas também serão removidas.')">
+                onsubmit="return confirm('Excluir este relatório?')">
                 <button class="btn btn-danger btn-sm" type="submit">Excluir</button>
               </form>
             </div>
@@ -140,7 +177,7 @@
   <div class="modal-overlay" id="modal-create">
     <div class="modal">
       <h2>Novo relatório</h2>
-      <p>Cole os IDs encontrados na URL do relatório no Power BI.</p>
+      <p class="modal-sub">Cole os IDs encontrados na URL do relatório no Power BI.</p>
       <form method="POST" action="/admin/reports/create">
         <label>Nome do relatório</label>
         <input type="text" name="name" placeholder="Ex: Vendas por Revenda" required autofocus>
@@ -148,17 +185,10 @@
         <textarea name="description" placeholder="Breve descrição do relatório"></textarea>
         <label>Workspace ID</label>
         <input type="text" name="workspace_id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" required>
-        <p class="hint">URL do Power BI: .../groups/<strong>WORKSPACE-ID</strong>/reports/...</p>
+        <p class="hint">URL: .../groups/<strong>WORKSPACE-ID</strong>/reports/...</p>
         <label>Report ID</label>
         <input type="text" name="report_id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" required>
-        <p class="hint">URL do Power BI: .../reports/<strong>REPORT-ID</strong>/...</p>
-        <label>Configurações</label>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;font-size:14px;color:#444">
-        <input type="checkbox" name="has_rls" id="has_rls">
-        <label for="has_rls" style="margin:0;font-weight:400">
-            Este relatório usa Row Level Security (RLS)
-        </label>
-        </div>
+        <p class="hint">URL: .../reports/<strong>REPORT-ID</strong>/...</p>
         <div class="modal-actions">
           <button type="button" class="btn btn-outline" onclick="closeModal('modal-create')">Cancelar</button>
           <button type="submit" class="btn btn-primary">Salvar</button>
@@ -171,7 +201,7 @@
   <div class="modal-overlay" id="modal-edit">
     <div class="modal">
       <h2>Editar relatório</h2>
-      <p>Atualize as informações do relatório.</p>
+      <p class="modal-sub">Atualize as informações do relatório.</p>
       <form method="POST" id="form-edit">
         <label>Nome do relatório</label>
         <input type="text" name="name" id="edit-name" required>
@@ -181,16 +211,52 @@
         <input type="text" name="workspace_id" id="edit-workspace" required>
         <label>Report ID</label>
         <input type="text" name="report_id" id="edit-report" required>
-        <label>Configurações</label>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;font-size:14px;color:#444">
-        <input type="checkbox" name="has_rls" id="edit-has-rls">
-        <label for="edit-has-rls" style="margin:0;font-weight:400">
-            Este relatório usa Row Level Security (RLS)
-        </label>
+        <div class="checkbox-row">
+          <input type="checkbox" name="has_rls" id="edit-has-rls">
+          <label for="edit-has-rls" style="margin:0;font-weight:400">Este relatório usa Row Level Security (RLS)</label>
         </div>
         <div class="modal-actions">
           <button type="button" class="btn btn-outline" onclick="closeModal('modal-edit')">Cancelar</button>
           <button type="submit" class="btn btn-primary">Salvar alterações</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal RLS -->
+  <div class="modal-overlay" id="modal-rls">
+    <div class="modal">
+      <h2>Configuração de RLS</h2>
+      <p class="modal-sub" id="rls-report-name" style="color:#6d28d9;font-weight:500"></p>
+
+      <form method="POST" id="form-rls">
+        <div class="rls-section">
+          <div class="rls-section-title">🔒 Parâmetros do filtro</div>
+
+          <label>Nome da role no Power BI</label>
+          <input type="text" name="role_name" id="rls-role-name"
+            placeholder="Ex: empresa_revenda">
+          <p class="hint">Nome exato da função criada em Modelagem → Gerenciar funções.</p>
+
+          <label>Campo de filtro do usuário</label>
+          <select name="filter_source" id="rls-filter-source">
+            <option value="empresa_revenda">Revenda (empresa_revenda)</option>
+            <option value="departamento">Departamento (departamento)</option>
+            <option value="email">Email do usuário</option>
+          </select>
+          <p class="hint">Qual dado do perfil do usuário será enviado como identidade ao Power BI.</p>
+
+          <label>Descrição <span style="color:#aaa;font-weight:400">(opcional)</span></label>
+          <input type="text" name="description" id="rls-description"
+            placeholder="Ex: Filtra por empresa/revenda do usuário">
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-danger" id="btn-delete-rls" style="margin-right:auto">
+            Remover RLS
+          </button>
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-rls')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar configuração</button>
         </div>
       </form>
     </div>
@@ -203,16 +269,52 @@
     function closeModal(id) {
       document.getElementById(id).classList.remove('active');
     }
+
     function openEdit(id, name, description, reportId, workspaceId, hasRls) {
-    document.getElementById('form-edit').action    = '/admin/reports/edit/' + id;
-    document.getElementById('edit-name').value     = name;
-    document.getElementById('edit-description').value = description;
-    document.getElementById('edit-workspace').value   = workspaceId;
-    document.getElementById('edit-report').value      = reportId;
-    document.getElementById('edit-has-rls').checked   = hasRls;
-    openModal('modal-edit');
+      document.getElementById('form-edit').action        = '/admin/reports/edit/' + id;
+      document.getElementById('edit-name').value         = name;
+      document.getElementById('edit-description').value  = description;
+      document.getElementById('edit-workspace').value    = workspaceId;
+      document.getElementById('edit-report').value       = reportId;
+      document.getElementById('edit-has-rls').checked    = hasRls;
+      openModal('modal-edit');
     }
-    // Fecha modal clicando fora
+
+    function openRLS(id, name, roleName, filterSource, description, hasConfig) {
+      document.getElementById('form-rls').action          = '/admin/reports/' + id + '/rls';
+      document.getElementById('rls-report-name').textContent = name;
+      document.getElementById('rls-role-name').value      = roleName;
+      document.getElementById('rls-description').value    = description;
+
+      // Seleciona o filter_source correto
+      var sel = document.getElementById('rls-filter-source');
+      for (var i = 0; i < sel.options.length; i++) {
+        if (sel.options[i].value === filterSource) {
+          sel.selectedIndex = i;
+          break;
+        }
+      }
+
+      // Botão remover RLS
+      var btnDel = document.getElementById('btn-delete-rls');
+      if (hasConfig) {
+        btnDel.style.display = 'inline-block';
+        btnDel.onclick = function() {
+          if (confirm('Remover configuração RLS deste relatório?')) {
+            var f = document.createElement('form');
+            f.method = 'POST';
+            f.action = '/admin/reports/' + id + '/rls/delete';
+            document.body.appendChild(f);
+            f.submit();
+          }
+        };
+      } else {
+        btnDel.style.display = 'none';
+      }
+
+      openModal('modal-rls');
+    }
+
     document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
       overlay.addEventListener('click', function(e) {
         if (e.target === overlay) overlay.classList.remove('active');

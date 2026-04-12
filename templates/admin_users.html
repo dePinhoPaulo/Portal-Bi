@@ -114,19 +114,20 @@
       <form method="POST" action="/admin/users/create">
         <label>Nome</label>
         <input type="text" name="name" required autofocus>
-        <label>Perfil</label>
-        <select name="role" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:16px;">
-          <option value="user">Usuário comum</option>
-          <option value="gerente">Gerente de revenda</option>
-          <option value="diretor">Diretor</option>
-        </select>
-
-        <label>Código da revenda <span style="color:#aaa;font-weight:400"></span></label>
-        <input type="text" name="empresa_revenda" placeholder="Ex: 1.18">
         <label>Email</label>
         <input type="email" name="email" required>
         <label>Senha</label>
         <input type="password" name="password" required>
+        <label>Perfil</label>
+        <select name="role" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:16px;outline:none;background:#fff">
+          <option value="user">Usuário comum</option>
+          <option value="gerente">Gerente de revenda</option>
+          <option value="diretor">Diretor</option>
+        </select>
+        <label>Revenda <span style="color:#aaa;font-weight:400">(para gerentes)</span></label>
+        <input type="text" name="empresa_revenda" placeholder="Ex: 1.18">
+        <label>Departamento <span style="color:#aaa;font-weight:400">(opcional)</span></label>
+        <input type="text" name="departamento" placeholder="Ex: Financeiro">
         <div class="checkbox-row">
           <input type="checkbox" name="is_admin" id="is_admin">
           <label for="is_admin" style="margin:0">Administrador</label>

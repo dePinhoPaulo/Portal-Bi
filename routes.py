@@ -8,7 +8,7 @@ from powerbi import get_embed_token
 from datetime import datetime
 from sqlalchemy import or_
 
-def init_routes(app, db, User, Report, Group, ReportGroup, Permission, AccessLog):
+def init_routes(app, db, User, Report, ReportRLS, Group, ReportGroup, Permission, AccessLog):
 
     @app.route("/")
     def index():
@@ -94,20 +94,16 @@ def init_routes(app, db, User, Report, Group, ReportGroup, Permission, AccessLog
         report  = Report.query.get_or_404(report_id)
 
         if not user.is_admin:
-            # Verifica permissão direta
-            direct = Permission.query.filter_by(
+            direct    = Permission.query.filter_by(
                 user_id=user_id, report_id=report_id, group_id=None
             ).first()
-
-            # Verifica permissão via grupo
-            rg_entries  = ReportGroup.query.filter_by(report_id=report_id).all()
-            group_ids   = [rg.group_id for rg in rg_entries]
-            via_group   = Permission.query.filter(
+            rg_entries = ReportGroup.query.filter_by(report_id=report_id).all()
+            group_ids  = [rg.group_id for rg in rg_entries]
+            via_group  = Permission.query.filter(
                 Permission.user_id == user_id,
                 Permission.group_id.in_(group_ids),
                 Permission.report_id == None
             ).first() if group_ids else None
-
             if not direct and not via_group:
                 return redirect(url_for("dashboard"))
 
@@ -119,12 +115,13 @@ def init_routes(app, db, User, Report, Group, ReportGroup, Permission, AccessLog
         db.session.add(log)
         db.session.commit()
 
+        rls_config = ReportRLS.query.filter_by(report_id=report_id).first()
         embed_data = get_embed_token(
             report.workspace_id, report.report_id,
-            user=user, has_rls=report.has_rls
+            user=user, has_rls=report.has_rls, rls_config=rls_config
         )
         return render_template("report.html", user=user, report=report, embed=embed_data)
-
+    
     # ── Admin Users ─────────────────────────────────────────────
 
     @app.route("/admin/users")
@@ -167,6 +164,9 @@ def init_routes(app, db, User, Report, Group, ReportGroup, Permission, AccessLog
         if not user.is_admin:
             return redirect(url_for("dashboard"))
         reports = Report.query.order_by(Report.created_at.desc()).all()
+        # Injeta o rls em cada relatório para o template acessar como r.rls
+        for r in reports:
+            r.rls = ReportRLS.query.filter_by(report_id=r.id).first()
         return render_template("admin_reports.html", user=user, reports=reports)
 
     @app.route("/admin/reports/create", methods=["POST"])
@@ -402,3 +402,75 @@ def init_routes(app, db, User, Report, Group, ReportGroup, Permission, AccessLog
             db.session.commit()
             return redirect(url_for("login"))
         return render_template("setup.html")
+    
+    # ── Admin RLS ────────────────────────────────────────────────
+
+    @app.route("/admin/reports/<int:report_id>/rls", methods=["POST"])
+    @jwt_required()
+    def admin_save_rls(report_id):
+        user_id = int(get_jwt_identity())
+        admin   = User.query.get(user_id)
+        if not admin.is_admin:
+            return jsonify({"error": "Sem permissão"}), 403
+
+        data   = request.form
+        report = Report.query.get_or_404(report_id)
+
+        # Ativa RLS no relatório
+        report.has_rls = True
+        db.session.flush()
+
+        # Cria ou atualiza configuração RLS
+        rls = ReportRLS.query.filter_by(report_id=report_id).first()
+        if rls:
+            rls.role_name     = data["role_name"]
+            rls.filter_source = data["filter_source"]
+            rls.description   = data.get("description", "")
+        else:
+            rls = ReportRLS(
+                report_id     = report_id,
+                role_name     = data["role_name"],
+                filter_source = data["filter_source"],
+                description   = data.get("description", "")
+            )
+            db.session.add(rls)
+
+        db.session.commit()
+        return redirect(url_for("admin_reports"))
+
+    @app.route("/admin/reports/<int:report_id>/rls/delete", methods=["POST"])
+    @jwt_required()
+    def admin_delete_rls(report_id):
+        user_id = int(get_jwt_identity())
+        admin   = User.query.get(user_id)
+        if not admin.is_admin:
+            return jsonify({"error": "Sem permissão"}), 403
+
+        report = Report.query.get_or_404(report_id)
+        report.has_rls = False
+        ReportRLS.query.filter_by(report_id=report_id).delete()
+        db.session.commit()
+        return redirect(url_for("admin_reports"))
+
+    @app.route("/admin/users/edit/<int:target_id>", methods=["POST"])
+    @jwt_required()
+    def admin_edit_user(target_id):
+        user_id = int(get_jwt_identity())
+        admin   = User.query.get(user_id)
+        if not admin.is_admin:
+            return jsonify({"error": "Sem permissão"}), 403
+
+        data = request.form
+        u    = User.query.get_or_404(target_id)
+        u.name            = data["name"]
+        u.email           = data["email"]
+        u.role            = data.get("role", "user")
+        u.empresa_revenda = data.get("empresa_revenda") or None
+        u.departamento    = data.get("departamento") or None
+        u.is_admin        = data.get("is_admin") == "on"
+        u.active          = data.get("active") == "on"
+        if data.get("password"):
+            from auth import hash_password
+            u.password_hash = hash_password(data["password"])
+        db.session.commit()
+        return redirect(url_for("admin_users"))
