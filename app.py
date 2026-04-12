@@ -20,10 +20,10 @@ db = SQLAlchemy(app)
 jwt = JWTManager(app)
 
 from models import init_models, create_tables
-User, Report, Permission, AccessLog = init_models(db)
+User, Report, Group, ReportGroup, Permission, AccessLog = init_models(db)
 
 from routes import init_routes
-init_routes(app, db, User, Report, Permission, AccessLog)
+init_routes(app, db, User, Report, Group, ReportGroup, Permission, AccessLog)
 
 if __name__ == "__main__":
     with app.app_context():

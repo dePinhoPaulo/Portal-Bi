@@ -26,3 +26,6 @@ portal-bi/
 └── templates/
     ├── login.html
     ├── dashboard.html
+
+PROXIMAS MELHORIAS:
+  GRUPOS DE RELATORIOS;
