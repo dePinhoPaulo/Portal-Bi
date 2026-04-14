@@ -115,10 +115,10 @@ def init_routes(app, db, User, Report, ReportRLS, Group, ReportGroup, Permission
         db.session.add(log)
         db.session.commit()
 
-        rls_config = ReportRLS.query.filter_by(report_id=report_id).first()
-        embed_data = get_embed_token(
+        rls_configs = ReportRLS.query.filter_by(report_id=report_id).all()
+        embed_data  = get_embed_token(
             report.workspace_id, report.report_id,
-            user=user, has_rls=report.has_rls, rls_config=rls_config
+            user=user, has_rls=report.has_rls, rls_configs=rls_configs
         )
         return render_template("report.html", user=user, report=report, embed=embed_data)
     
@@ -164,9 +164,8 @@ def init_routes(app, db, User, Report, ReportRLS, Group, ReportGroup, Permission
         if not user.is_admin:
             return redirect(url_for("dashboard"))
         reports = Report.query.order_by(Report.created_at.desc()).all()
-        # Injeta o rls em cada relatório para o template acessar como r.rls
         for r in reports:
-            r.rls = ReportRLS.query.filter_by(report_id=r.id).first()
+            r.rls_list = ReportRLS.query.filter_by(report_id=r.id).all()
         return render_template("admin_reports.html", user=user, reports=reports)
 
     @app.route("/admin/reports/create", methods=["POST"])
@@ -405,7 +404,7 @@ def init_routes(app, db, User, Report, ReportRLS, Group, ReportGroup, Permission
     
     # ── Admin RLS ────────────────────────────────────────────────
 
-    @app.route("/admin/reports/<int:report_id>/rls", methods=["POST"])
+    @app.route("/admin/reports/<int:report_id>/rls/save", methods=["POST"])
     @jwt_required()
     def admin_save_rls(report_id):
         user_id = int(get_jwt_identity())
@@ -413,42 +412,45 @@ def init_routes(app, db, User, Report, ReportRLS, Group, ReportGroup, Permission
         if not admin.is_admin:
             return jsonify({"error": "Sem permissão"}), 403
 
-        data   = request.form
         report = Report.query.get_or_404(report_id)
+        data   = request.form
+        rls_id = data.get("rls_id")
 
-        # Ativa RLS no relatório
-        report.has_rls = True
-        db.session.flush()
-
-        # Cria ou atualiza configuração RLS
-        rls = ReportRLS.query.filter_by(report_id=report_id).first()
-        if rls:
+        if rls_id:
+            rls = ReportRLS.query.get(int(rls_id))
+            rls.rule_name     = data["rule_name"]
+            rls.system_role   = data["system_role"]
             rls.role_name     = data["role_name"]
             rls.filter_source = data["filter_source"]
             rls.description   = data.get("description", "")
         else:
             rls = ReportRLS(
                 report_id     = report_id,
+                rule_name     = data["rule_name"],
+                system_role   = data["system_role"],
                 role_name     = data["role_name"],
                 filter_source = data["filter_source"],
                 description   = data.get("description", "")
             )
             db.session.add(rls)
 
+        report.has_rls = True
         db.session.commit()
         return redirect(url_for("admin_reports"))
-
-    @app.route("/admin/reports/<int:report_id>/rls/delete", methods=["POST"])
+    
+    @app.route("/admin/reports/<int:report_id>/rls/<int:rls_id>/delete", methods=["POST"])
     @jwt_required()
-    def admin_delete_rls(report_id):
+    def admin_delete_rls(report_id, rls_id):
         user_id = int(get_jwt_identity())
         admin   = User.query.get(user_id)
         if not admin.is_admin:
             return jsonify({"error": "Sem permissão"}), 403
 
-        report = Report.query.get_or_404(report_id)
-        report.has_rls = False
-        ReportRLS.query.filter_by(report_id=report_id).delete()
+        ReportRLS.query.filter_by(id=rls_id).delete()
+        # Se não sobrou nenhuma regra, desativa RLS
+        if ReportRLS.query.filter_by(report_id=report_id).count() == 0:
+            report = Report.query.get(report_id)
+            report.has_rls = False
         db.session.commit()
         return redirect(url_for("admin_reports"))
 

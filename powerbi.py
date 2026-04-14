@@ -18,8 +18,18 @@ def get_access_token():
         return result["access_token"]
     raise Exception(f"Erro ao obter token: {result.get('error_description')}")
 
+def get_user_value(user, filter_source):
+    """Retorna o valor do campo do usuário conforme filter_source."""
+    if filter_source == "empresa_revenda":
+        return user.empresa_revenda
+    elif filter_source == "departamento":
+        return user.departamento
+    elif filter_source == "email":
+        return user.email
+    return None
+
 def get_embed_token(workspace_id: str, report_id: str,
-                    user=None, has_rls: bool = False, rls_config=None) -> dict:
+                    user=None, has_rls: bool = False, rls_configs=None) -> dict:
     access_token = get_access_token()
     headers = {
         "Authorization": f"Bearer {access_token}",
@@ -34,25 +44,48 @@ def get_embed_token(workspace_id: str, report_id: str,
 
     body = {"accessLevel": "view"}
 
-    if has_rls and rls_config and user:
-        # Pega o valor do campo correto no usuário
-        filter_source = rls_config.filter_source
-        if filter_source == "empresa_revenda":
-            username = user.empresa_revenda or user.email
-        elif filter_source == "departamento":
-            username = user.departamento or user.email
+    if has_rls and rls_configs and user:
+        user_role   = user.role if not user.is_admin else "admin"
+        matched_rls = [r for r in rls_configs if r.system_role == user_role]
+
+        if matched_rls:
+            # Monta todas as roles e usa o username correto para cada filtro
+            roles    = []
+            username = user.email  # fallback
+
+            for rls in matched_rls:
+                if rls.role_name not in roles:
+                    roles.append(rls.role_name)
+
+                # Pega o valor do campo mais relevante
+                # Prioriza o primeiro que tiver valor preenchido no usuário
+                val = get_user_value(user, rls.filter_source)
+                if val and username == user.email:
+                    username = val
+
+            # Power BI só aceita um username por identidade
+            # Para múltiplos filtros diferentes (revenda E departamento)
+            # precisamos de identidades separadas por role
+            identities = []
+            for rls in matched_rls:
+                val = get_user_value(user, rls.filter_source) or user.email
+                identities.append({
+                    "username": val,
+                    "roles":    [rls.role_name],
+                    "datasets": [dataset_id]
+                })
+
+            body["identities"] = identities
+            print(f"RLS aplicado: {[(i['roles'], i['username']) for i in identities]}")
+
         else:
-            username = user.email
-
-        # Admin e diretor: veem tudo via role sem filtro de username
-        if user.is_admin or user.role == "diretor":
-            username = user.email
-
-        body["identities"] = [{
-            "username": username,
-            "roles":    [rls_config.role_name],
-            "datasets": [dataset_id]
-        }]
+            # Role não filtrada → envia role que vê tudo
+            body["identities"] = [{
+                "username": user.email,
+                "roles":    ["diretor"],
+                "datasets": [dataset_id]
+            }]
+            print(f"Acesso livre via role diretor: {user.email}")
 
     print("BODY ENVIADO:", body)
 

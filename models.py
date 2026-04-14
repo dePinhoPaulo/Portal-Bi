@@ -29,7 +29,9 @@ def init_models(db):
     class ReportRLS(db.Model):
         __tablename__ = "report_rls"
         id            = db.Column(db.Integer, primary_key=True)
-        report_id     = db.Column(db.Integer, db.ForeignKey("reports.id", ondelete="CASCADE"), unique=True, nullable=False)
+        report_id     = db.Column(db.Integer, db.ForeignKey("reports.id", ondelete="CASCADE"), nullable=False)
+        rule_name     = db.Column(db.String(100))
+        system_role   = db.Column(db.String(50), nullable=False, default='gerente')
         role_name     = db.Column(db.String(150), nullable=False)
         filter_source = db.Column(db.String(50),  nullable=False)
         description   = db.Column(db.String(300))
