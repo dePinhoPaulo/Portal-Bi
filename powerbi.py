@@ -49,43 +49,43 @@ def get_embed_token(workspace_id: str, report_id: str,
         matched_rls = [r for r in rls_configs if r.system_role == user_role]
 
         if matched_rls:
-            # Monta todas as roles e usa o username correto para cada filtro
-            roles    = []
-            username = user.email  # fallback
+            if len(matched_rls) == 1:
+                # Filtro simples
+                rls      = matched_rls[0]
+                username = get_user_value(user, rls.filter_source) or user.email
+                roles    = [rls.role_name]
+                print(f"RLS simples: role={roles}, username={username}")
 
-            for rls in matched_rls:
-                if rls.role_name not in roles:
-                    roles.append(rls.role_name)
+            else:
+                # Filtro duplo — ordem FIXA: empresa_revenda|departamento
+                # Independente da ordem cadastrada no banco
+                rls_by_source = {r.filter_source: r for r in matched_rls}
 
-                # Pega o valor do campo mais relevante
-                # Prioriza o primeiro que tiver valor preenchido no usuário
-                val = get_user_value(user, rls.filter_source)
-                if val and username == user.email:
-                    username = val
+                val_revenda = get_user_value(user, "empresa_revenda") \
+                    if "empresa_revenda" in rls_by_source else ""
+                val_depto   = get_user_value(user, "departamento") \
+                    if "departamento" in rls_by_source else ""
 
-            # Power BI só aceita um username por identidade
-            # Para múltiplos filtros diferentes (revenda E departamento)
-            # precisamos de identidades separadas por role
-            identities = []
-            for rls in matched_rls:
-                val = get_user_value(user, rls.filter_source) or user.email
-                identities.append({
-                    "username": val,
-                    "roles":    [rls.role_name],
-                    "datasets": [dataset_id]
-                })
+                username = f"{val_revenda}|{val_depto}"
 
-            body["identities"] = identities
-            print(f"RLS aplicado: {[(i['roles'], i['username']) for i in identities]}")
+                # Role vem da primeira regra (todas devem usar a mesma role combinada)
+                roles = [matched_rls[0].role_name]
+                print(f"RLS duplo: role={roles}, username={username}")
 
-        else:
-            # Role não filtrada → envia role que vê tudo
             body["identities"] = [{
-                "username": user.email,
-                "roles":    ["diretor"],
+                "username": username,
+                "roles":    roles,
                 "datasets": [dataset_id]
             }]
-            print(f"Acesso livre via role diretor: {user.email}")
+
+        else:
+            # Sem regra para essa role → acesso livre via role que vê tudo
+            body["identities"] = [{
+                "username": user.email,
+                "roles":    ["admin"],
+                "datasets": [dataset_id]
+            }]
+            print(f"Acesso livre via role admin: {user.email}")
 
     print("BODY ENVIADO:", body)
 
