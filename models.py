@@ -68,7 +68,16 @@ def init_models(db):
         ip_address  = db.Column(db.String(50))
         accessed_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    return User, Report, ReportRLS, Group, ReportGroup, Permission, AccessLog
+    class PasswordResetCode(db.Model):
+        __tablename__ = "password_reset_codes"
+        id         = db.Column(db.Integer, primary_key=True)
+        user_id    = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+        code       = db.Column(db.String(6), nullable=False)
+        used       = db.Column(db.Boolean, default=False)
+        expires_at = db.Column(db.DateTime, nullable=False)
+        created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    return User, Report, ReportRLS, Group, ReportGroup, Permission, AccessLog, PasswordResetCode
 
 def create_tables(db):
     db.create_all()

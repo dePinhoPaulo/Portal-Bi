@@ -7,8 +7,12 @@ from auth import hash_password, check_password
 from powerbi import get_embed_token
 from datetime import datetime
 from sqlalchemy import or_
+from flask_mail import Message
+from datetime import datetime, timedelta
+import random
+import string
 
-def init_routes(app, db, User, Report, ReportRLS, Group, ReportGroup, Permission, AccessLog):
+def init_routes(app, db, mail, User, Report, ReportRLS, Group, ReportGroup, Permission, AccessLog, PasswordResetCode):
 
     @app.route("/")
     def index():
@@ -476,3 +480,125 @@ def init_routes(app, db, User, Report, ReportRLS, Group, ReportGroup, Permission
             u.password_hash = hash_password(data["password"])
         db.session.commit()
         return redirect(url_for("admin_users"))
+    
+    # ── Recuperação de senha ─────────────────────────────────────
+
+    def gerar_codigo():
+        return ''.join(random.choices(string.digits, k=6))
+
+    @app.route("/forgot-password", methods=["GET", "POST"])
+    def forgot_password():
+        if request.method == "GET":
+            return render_template("forgot_password.html")
+
+        email = request.form.get("email", "").strip()
+        user  = User.query.filter_by(email=email, active=True).first()
+
+        # Email não cadastrado — mostra erro e não prossegue
+        if not user:
+            return render_template("forgot_password.html",
+                                   error="Este email não está cadastrado no sistema.")
+
+        # Email válido — invalida códigos anteriores
+        PasswordResetCode.query.filter_by(
+            user_id=user.id, used=False
+        ).update({"used": True})
+        db.session.flush()
+
+        # Gera novo código
+        code       = gerar_codigo()
+        expires_at = datetime.utcnow() + timedelta(minutes=15)
+        reset      = PasswordResetCode(
+            user_id    = user.id,
+            code       = code,
+            expires_at = expires_at
+        )
+        db.session.add(reset)
+        db.session.commit()
+
+        # Envia email
+        try:
+            msg = Message(
+                subject="Código de recuperação de senha — Portal BI",
+                recipients=[user.email]
+            )
+            msg.html = f"""
+            <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+                        max-width:480px;margin:0 auto;padding:32px 24px;background:#fff">
+              <h2 style="color:#1a1a2e;font-size:20px;margin-bottom:8px">
+                Recuperação de senha
+              </h2>
+              <p style="color:#666;font-size:14px;margin-bottom:24px">
+                Você solicitou a recuperação de senha do Portal BI.
+                Use o código abaixo para redefinir sua senha.
+              </p>
+              <div style="background:#f0f2f5;border-radius:12px;padding:24px;
+                          text-align:center;margin-bottom:24px">
+                <span style="font-size:36px;font-weight:700;letter-spacing:8px;color:#4f46e5">
+                  {code}
+                </span>
+              </div>
+              <p style="color:#888;font-size:13px;margin-bottom:8px">
+                ⏱ Este código expira em <strong>15 minutos</strong>.
+              </p>
+              <p style="color:#888;font-size:13px">
+                Se você não solicitou a recuperação de senha, ignore este email.
+              </p>
+              <hr style="border:none;border-top:1px solid #eee;margin:24px 0">
+              <p style="color:#bbb;font-size:12px">Portal BI — acesso restrito à rede interna</p>
+            </div>
+            """
+            mail.send(msg)
+        except Exception as e:
+            print(f"Erro ao enviar email: {e}")
+
+        return redirect(url_for("reset_password", email=email))
+
+    @app.route("/reset-password", methods=["GET", "POST"])
+    def reset_password():
+        if request.method == "GET":
+            email = request.args.get("email", "")
+            return render_template("reset_password.html", email=email)
+
+        email    = request.form.get("email", "").strip()
+        code     = request.form.get("code", "").strip()
+        password = request.form.get("password", "")
+        confirm  = request.form.get("confirm", "")
+
+        user = User.query.filter_by(email=email, active=True).first()
+        if not user:
+            return render_template("reset_password.html", email=email,
+                                   error="Email não encontrado.")
+
+        if password != confirm:
+            return render_template("reset_password.html", email=email,
+                                   error="As senhas não coincidem.")
+
+        if len(password) < 8:
+            return render_template("reset_password.html", email=email,
+                                   error="A senha deve ter pelo menos 8 caracteres.")
+
+        # Busca código válido
+        reset = PasswordResetCode.query.filter_by(
+            user_id=user.id,
+            code=code,
+            used=False
+        ).order_by(PasswordResetCode.created_at.desc()).first()
+
+        if not reset:
+            return render_template("reset_password.html", email=email,
+                                   error="Código inválido ou já utilizado.")
+
+        if datetime.utcnow() > reset.expires_at:
+            reset.used = True
+            db.session.commit()
+            return render_template("reset_password.html", email=email,
+                                   error="Código expirado. Solicite um novo.")
+
+        # Atualiza senha e marca código como usado
+        from auth import hash_password
+        user.password_hash = hash_password(password)
+        reset.used         = True
+        db.session.commit()
+
+        return render_template("reset_password.html", success=True)
