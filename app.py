@@ -9,22 +9,19 @@ import os
 load_dotenv()
 
 app = Flask(__name__)
-
-app.config["SQLALCHEMY_DATABASE_URI"]    = os.getenv("DATABASE_URL")
+app.config["SQLALCHEMY_DATABASE_URI"]        = os.getenv("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["JWT_SECRET_KEY"]             = os.getenv("JWT_SECRET_KEY")
-app.config["JWT_TOKEN_LOCATION"]         = ["cookies"]
-app.config["JWT_COOKIE_SECURE"]          = False
-app.config["JWT_COOKIE_CSRF_PROTECT"]    = False
-app.config["JWT_ACCESS_TOKEN_EXPIRES"]   = timedelta(hours=8)
-
-# Flask-Mail
-app.config["MAIL_SERVER"]   = "smtp.gmail.com"
-app.config["MAIL_PORT"]     = 587
-app.config["MAIL_USE_TLS"]  = True
-app.config["MAIL_USERNAME"] = os.getenv("MAIL_USERNAME")
-app.config["MAIL_PASSWORD"] = os.getenv("MAIL_PASSWORD")
-app.config["MAIL_DEFAULT_SENDER"] = os.getenv("MAIL_FROM")
+app.config["JWT_SECRET_KEY"]                 = os.getenv("JWT_SECRET_KEY")
+app.config["JWT_TOKEN_LOCATION"]             = ["cookies"]
+app.config["JWT_COOKIE_SECURE"]              = False
+app.config["JWT_COOKIE_CSRF_PROTECT"]        = False
+app.config["JWT_ACCESS_TOKEN_EXPIRES"]       = timedelta(hours=8)
+app.config["MAIL_SERVER"]                    = "smtp.gmail.com"
+app.config["MAIL_PORT"]                      = 587
+app.config["MAIL_USE_TLS"]                   = True
+app.config["MAIL_USERNAME"]                  = os.getenv("MAIL_USERNAME")
+app.config["MAIL_PASSWORD"]                  = os.getenv("MAIL_PASSWORD")
+app.config["MAIL_DEFAULT_SENDER"]            = os.getenv("MAIL_FROM")
 
 db   = SQLAlchemy(app)
 jwt  = JWTManager(app)
@@ -41,10 +38,13 @@ def unauthorized_callback(error):
     return redirect(url_for("login"))
 
 from models import init_models, create_tables
-User, Report, ReportRLS, Group, ReportGroup, Permission, AccessLog, PasswordResetCode = init_models(db)
+(User, Report, ReportRLS, Group, ReportGroup,
+ Permission, RolePermission, AccessLog, PasswordResetCode) = init_models(db)
 
 from routes import init_routes
-init_routes(app, db, mail, User, Report, ReportRLS, Group, ReportGroup, Permission, AccessLog, PasswordResetCode)
+init_routes(app, db, mail,
+            User, Report, ReportRLS, Group, ReportGroup,
+            Permission, RolePermission, AccessLog, PasswordResetCode)
 
 if __name__ == "__main__":
     with app.app_context():

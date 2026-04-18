@@ -33,7 +33,7 @@ def init_models(db):
         rule_name     = db.Column(db.String(100))
         system_role   = db.Column(db.String(50), nullable=False, default='gerente')
         role_name     = db.Column(db.String(150), nullable=False)
-        filter_source = db.Column(db.String(50),  nullable=False)
+        filter_source = db.Column(db.String(50), nullable=False)
         description   = db.Column(db.String(300))
         created_at    = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -60,11 +60,19 @@ def init_models(db):
         group_id  = db.Column(db.Integer, db.ForeignKey("groups.id",  ondelete="CASCADE"), nullable=True)
         created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    class RolePermission(db.Model):
+        __tablename__ = "role_permissions"
+        id        = db.Column(db.Integer, primary_key=True)
+        role      = db.Column(db.String(50), nullable=False)
+        report_id = db.Column(db.Integer, db.ForeignKey("reports.id", ondelete="CASCADE"), nullable=True)
+        group_id  = db.Column(db.Integer, db.ForeignKey("groups.id",  ondelete="CASCADE"), nullable=True)
+        created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
     class AccessLog(db.Model):
         __tablename__ = "access_logs"
         id          = db.Column(db.Integer, primary_key=True)
-        user_id     = db.Column(db.Integer, db.ForeignKey("users.id"),    nullable=False)
-        report_id   = db.Column(db.Integer, db.ForeignKey("reports.id"),  nullable=False)
+        user_id     = db.Column(db.Integer, db.ForeignKey("users.id"),   nullable=False)
+        report_id   = db.Column(db.Integer, db.ForeignKey("reports.id"), nullable=False)
         ip_address  = db.Column(db.String(50))
         accessed_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -77,7 +85,8 @@ def init_models(db):
         expires_at = db.Column(db.DateTime, nullable=False)
         created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    return User, Report, ReportRLS, Group, ReportGroup, Permission, AccessLog, PasswordResetCode
+    return (User, Report, ReportRLS, Group, ReportGroup,
+            Permission, RolePermission, AccessLog, PasswordResetCode)
 
 def create_tables(db):
     db.create_all()
