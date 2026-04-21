@@ -1,223 +1,303 @@
 {% extends "base.html" %}
-{% block title %}Perfis{% endblock %}
+{% block title %}Relatórios{% endblock %}
 {% block nav_links %}{% include "nav_admin.html" %}{% endblock %}
 
 {% block extra_style %}
 <style>
   {% set current_user = user %}
-  .pp-split { min-height: 560px; }
-  .pp-split-left { width: 240px; }
-  .role-item {
+  .report-card {
+    background: #fff; border-radius: 10px;
+    border: 1px solid var(--pp-gray100);
+    margin-bottom: 14px; overflow: hidden;
+    box-shadow: 0 1px 4px rgba(13,27,42,0.04);
+  }
+  .report-card-header {
+    padding: 16px 20px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  }
+  .report-info { flex: 1; min-width: 0; }
+  .report-name { font-size: 14px; font-weight: 700; color: var(--pp-navy); }
+  .report-meta { font-size: 12px; color: var(--pp-gray500); margin-top: 4px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .actions-row { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; }
+  .rls-panel { display: none; border-top: 1px solid var(--pp-gray100); background: var(--pp-surface); }
+  .rls-panel.open { display: block; }
+  .rls-panel-header {
+    padding: 12px 20px; display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid var(--pp-gray100);
+  }
+  .rls-panel-title { font-size: 12px; font-weight: 700; color: var(--pp-blue); text-transform: uppercase; letter-spacing: 0.4px; }
+  .rls-rules { padding: 0 20px 12px; }
+  .rls-rule-row {
     display: flex; align-items: center; gap: 12px;
-    padding: 14px 18px; cursor: pointer;
-    border-bottom: 1px solid var(--pp-gray100); transition: background 0.1s;
+    padding: 10px 0; border-bottom: 1px solid var(--pp-gray100);
   }
-  .role-item:hover { background: var(--pp-surface); }
-  .role-item.selected { background: var(--pp-ice); border-left: 3px solid var(--pp-cyan); }
-  .role-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
-  .role-icon.user    { background: #f0fdf4; }
-  .role-icon.gerente { background: #fef3c7; }
-  .role-icon.diretor { background: #dbeafe; }
-  .role-meta-name  { font-size: 13px; font-weight: 600; color: var(--pp-navy); }
-  .role-meta-count { font-size: 11px; color: var(--pp-gray500); margin-top: 2px; }
-  .panel-title { font-size: 11px; font-weight: 700; color: var(--pp-gray500); text-transform: uppercase; letter-spacing: 0.5px; padding: 16px 18px 12px; border-bottom: 1px solid var(--pp-gray100); }
-  .right-header { padding: 16px 20px; border-bottom: 1px solid var(--pp-gray100); }
-  .right-title  { font-size: 15px; font-weight: 700; color: var(--pp-navy); }
-  .right-sub    { font-size: 12px; color: var(--pp-gray500); margin-top: 3px; }
-  .pp-tabs { display: flex; border-bottom: 1px solid var(--pp-gray100); padding: 0 20px; }
-  .pp-tab-btn {
-    padding: 10px 16px; font-size: 13px; font-weight: 600; color: var(--pp-gray500);
-    cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px;
-    background: none; border-top: none; border-left: none; border-right: none; transition: all 0.15s;
+  .rls-rule-row:last-child { border-bottom: none; }
+  .rls-rule-info { flex: 1; }
+  .rls-rule-name   { font-size: 13px; font-weight: 600; color: var(--pp-navy); }
+  .rls-rule-detail { font-size: 11px; color: var(--pp-gray500); margin-top: 2px; }
+  .rls-empty { padding: 16px 0; font-size: 13px; color: var(--pp-gray300); text-align: center; }
+  .pp-btn-rls { background: var(--pp-ice); color: var(--pp-blue); border: 1px solid #BFDBFE; }
+  .pp-btn-rls:hover { background: #BFDBFE; }
+  .rls-modal-banner {
+    background: var(--pp-ice); border: 1px solid #BFDBFE;
+    border-radius: 8px; padding: 10px 14px; margin-bottom: 20px;
   }
-  .pp-tab-btn.active { color: var(--pp-cyan); border-bottom-color: var(--pp-cyan); }
-  .list-search { padding: 12px 20px; border-bottom: 1px solid var(--pp-gray100); }
-  .list-search input {
-    width: 100%; padding: 8px 12px; border: 1px solid var(--pp-gray300);
-    border-radius: 7px; font-size: 13px; outline: none; background: var(--pp-surface);
-  }
-  .list-search input:focus { border-color: var(--pp-cyan); background: #fff; }
-  .item-list { padding: 0 20px; overflow-y: auto; max-height: 420px; }
-  .perm-item {
-    display: flex; align-items: center; gap: 12px;
-    padding: 11px 0; border-bottom: 1px solid var(--pp-gray100);
-  }
-  .perm-item:last-child { border-bottom: none; }
-  .perm-icon { width: 32px; height: 32px; border-radius: 7px; background: var(--pp-surface); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
-  .perm-name { font-size: 13px; font-weight: 500; color: var(--pp-navy); flex: 1; }
-  .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; color: var(--pp-gray300); font-size: 14px; text-align: center; gap: 8px; }
-  .loading { display: flex; align-items: center; justify-content: center; padding: 50px; color: var(--pp-gray300); font-size: 13px; }
+  .rls-modal-banner p { font-size: 13px; color: var(--pp-blue); font-weight: 600; }
+  .rls-modal-banner small { font-size: 11px; color: var(--pp-gray500); }
 </style>
 {% endblock %}
 
 {% block content %}
 {% set current_user = user %}
 <div class="pp-container">
-  <div class="pp-page-header">
-    <div class="pp-page-title">Permissões por perfil (RBAC)</div>
-    <div class="pp-page-sub">Defina os acessos padrão de cada perfil. Todo usuário herda automaticamente o que o perfil permite.</div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+    <div>
+      <div class="pp-page-title">Relatórios</div>
+      <div class="pp-page-sub">Gerencie os relatórios do Power BI disponíveis no portal.</div>
+    </div>
+    <button class="pp-btn pp-btn-primary" onclick="ppOpenModal('modal-create')">+ Novo relatório</button>
   </div>
 
-  <div class="pp-info-box">
-    <span>ℹ️</span>
-    <span>
-      Permissões aqui valem para <strong>todos os usuários do perfil</strong>.
-      Para acessos extras de um usuário específico, use
-      <a href="/admin/permissions" style="color:#1E40AF;font-weight:600">Permissões individuais</a>.
-    </span>
-  </div>
-
-  <div class="pp-split pp-card" style="min-height:520px">
-    <div class="pp-split-left">
-      <div class="panel-title">Perfis cadastrados</div>
-      {% for r in active_roles %}
-      <div class="role-item" onclick="selectRole('{{ r.key }}', this)">
-        <div class="role-icon" style="background:var(--pp-ice);font-size:16px">🎭</div>
-        <div>
-          <div class="role-meta-name">{{ r.label }}</div>
-          <div class="role-meta-count" id="count-{{ r.key }}">carregando...</div>
+  {% if reports %}
+    {% for r in reports %}
+    <div class="report-card">
+      <div class="report-card-header">
+        <div class="report-info">
+          <div class="report-name">{{ r.name }}</div>
+          <div class="report-meta">
+            <span style="font-family:monospace;font-size:11px;background:var(--pp-gray100);padding:2px 7px;border-radius:5px">{{ r.report_id[:8] }}...</span>
+            {% if r.active %}
+              <span class="pp-badge pp-badge-success">Ativo</span>
+            {% else %}
+              <span class="pp-badge pp-badge-danger">Inativo</span>
+            {% endif %}
+            {% if r.has_rls %}
+              <span class="pp-badge pp-badge-rls">🔒 RLS ({{ r.rls_list|length }})</span>
+            {% else %}
+              <span class="pp-badge pp-badge-gray">Sem RLS</span>
+            {% endif %}
+            {% if r.description %}
+            <span style="color:var(--pp-gray500)">{{ r.description }}</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="actions-row">
+          <button class="pp-btn pp-btn-outline pp-btn-sm" onclick="openEdit(
+            {{ r.id }},'{{ r.name }}','{{ r.description or '' }}',
+            '{{ r.report_id }}','{{ r.workspace_id }}',
+            {{ 'true' if r.has_rls else 'false' }})">
+            Editar
+          </button>
+          <button class="pp-btn pp-btn-rls pp-btn-sm" onclick="toggleRLS({{ r.id }})">
+            🔒 RLS ({{ r.rls_list|length }})
+          </button>
+          <form method="POST" action="/admin/reports/toggle/{{ r.id }}" style="display:inline">
+            <button class="pp-btn pp-btn-outline pp-btn-sm">
+              {% if r.active %}Desativar{% else %}Ativar{% endif %}
+            </button>
+          </form>
+          <form method="POST" action="/admin/reports/delete/{{ r.id }}" style="display:inline"
+            onsubmit="return confirm('Excluir este relatório e todas as permissões associadas?')">
+            <button class="pp-btn pp-btn-danger pp-btn-sm">Excluir</button>
+          </form>
         </div>
       </div>
-      {% endfor %}
-    </div>
 
-    <div class="pp-split-right" id="right-panel">
-      <div class="empty-state">
-        <div style="font-size:32px">👈</div>
-        <div>Selecione um perfil para gerenciar seus acessos padrão.</div>
+      <!-- Painel RLS expansível -->
+      <div class="rls-panel" id="rls-panel-{{ r.id }}">
+        <div class="rls-panel-header">
+          <span class="rls-panel-title">🔒 Regras de Row Level Security</span>
+          <button class="pp-btn pp-btn-rls pp-btn-sm"
+            onclick="openRLSForm({{ r.id }},'{{ r.name }}',0,'','gerente','','empresa_revenda','')">
+            + Nova regra
+          </button>
+        </div>
+
+        <!-- Aviso sobre filtro duplo -->
+          {% if r.rls_list|length > 1 %}
+          <div style="background:#fffbeb;border-bottom:1px solid #fde68a;padding:10px 20px;font-size:12px;color:#92400e;display:flex;align-items:flex-start;gap:8px">
+            <span style="flex-shrink:0">⚠️</span>
+            <span>
+              <strong>Filtro duplo ativo.</strong>
+              Para usuários com múltiplas regras, o username enviado ao Power BI segue a ordem fixa:
+              <code style="background:#fef3c7;padding:1px 5px;border-radius:4px">empresa_revenda|departamento</code>.
+              Certifique-se que o DAX da role <strong>user_filter</strong> no Power BI Desktop usa esta mesma ordem:
+              <code style="background:#fef3c7;padding:1px 5px;border-radius:4px">LEFT(USERNAME(), FIND("|", USERNAME()) - 1)</code> para revenda
+              e <code style="background:#fef3c7;padding:1px 5px;border-radius:4px">RIGHT(USERNAME(), LEN(USERNAME()) - FIND("|", USERNAME()))</code> para departamento.
+            </span>
+          </div>
+          {% endif %}
+
+        <div class="rls-rules">
+          {% if r.rls_list %}
+            {% for rls in r.rls_list %}
+            <div class="rls-rule-row">
+              <div class="rls-rule-info">
+                <div class="rls-rule-name">{{ rls.rule_name or 'Regra ' ~ loop.index }}</div>
+                <div class="rls-rule-detail">
+                  Aplica a: <strong>{{ rls.system_role }}</strong> ·
+                  Role Power BI: <strong>{{ rls.role_name }}</strong> ·
+                  Filtro: <strong>{{ rls.filter_source }}</strong>
+                  {% if rls.description %} · {{ rls.description }}{% endif %}
+                </div>
+              </div>
+              <button class="pp-btn pp-btn-outline pp-btn-sm" onclick="openRLSForm(
+                {{ r.id }},'{{ r.name }}',
+                {{ rls.id }},'{{ rls.rule_name or '' }}',
+                '{{ rls.system_role }}','{{ rls.role_name }}',
+                '{{ rls.filter_source }}','{{ rls.description or '' }}'
+              )">Editar</button>
+              <form method="POST" action="/admin/reports/{{ r.id }}/rls/{{ rls.id }}/delete"
+                style="display:inline" onsubmit="return confirm('Excluir esta regra RLS?')">
+                <button class="pp-btn pp-btn-danger pp-btn-sm">Excluir</button>
+              </form>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="rls-empty">Nenhuma regra cadastrada. Clique em "+ Nova regra" para adicionar.</div>
+          {% endif %}
+        </div>
       </div>
     </div>
+    {% endfor %}
+  {% else %}
+  <div class="pp-empty">
+    <div class="pp-empty-icon">📊</div>
+    <div>Nenhum relatório cadastrado ainda.</div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Modal criar relatório -->
+<div class="pp-modal-overlay" id="modal-create">
+  <div class="pp-modal">
+    <div class="pp-modal-header">
+      <div class="pp-modal-title">Novo relatório</div>
+      <div class="pp-modal-sub">Cole os IDs encontrados na URL do relatório no Power BI.</div>
+    </div>
+    <form method="POST" action="/admin/reports/create">
+      <label class="pp-label">Nome do relatório</label>
+      <input class="pp-input" type="text" name="name" placeholder="Ex: Vendas por Revenda" required autofocus>
+      <label class="pp-label">Descrição <span style="color:var(--pp-gray300);font-weight:400">(opcional)</span></label>
+      <textarea class="pp-textarea" name="description" placeholder="Breve descrição"></textarea>
+      <label class="pp-label">Workspace ID</label>
+      <input class="pp-input" type="text" name="workspace_id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" required>
+      <p class="pp-hint">URL: .../groups/<strong>WORKSPACE-ID</strong>/reports/...</p>
+      <label class="pp-label">Report ID</label>
+      <input class="pp-input" type="text" name="report_id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" required>
+      <p class="pp-hint">URL: .../reports/<strong>REPORT-ID</strong>/...</p>
+      <div class="pp-modal-actions">
+        <button type="button" class="pp-btn pp-btn-outline" onclick="ppCloseModal('modal-create')">Cancelar</button>
+        <button type="submit" class="pp-btn pp-btn-primary">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal editar relatório -->
+<div class="pp-modal-overlay" id="modal-edit">
+  <div class="pp-modal">
+    <div class="pp-modal-header">
+      <div class="pp-modal-title">Editar relatório</div>
+    </div>
+    <form method="POST" id="form-edit">
+      <label class="pp-label">Nome</label>
+      <input class="pp-input" type="text" name="name" id="edit-name" required>
+      <label class="pp-label">Descrição</label>
+      <textarea class="pp-textarea" name="description" id="edit-description"></textarea>
+      <label class="pp-label">Workspace ID</label>
+      <input class="pp-input" type="text" name="workspace_id" id="edit-workspace" required>
+      <label class="pp-label">Report ID</label>
+      <input class="pp-input" type="text" name="report_id" id="edit-report" required>
+      <div class="pp-checkbox-row">
+        <input type="checkbox" name="has_rls" id="edit-has-rls">
+        <label for="edit-has-rls" style="margin:0;font-weight:400">Este relatório usa RLS</label>
+      </div>
+      <div class="pp-modal-actions">
+        <button type="button" class="pp-btn pp-btn-outline" onclick="ppCloseModal('modal-edit')">Cancelar</button>
+        <button type="submit" class="pp-btn pp-btn-primary">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal regra RLS -->
+<div class="pp-modal-overlay" id="modal-rls-form">
+  <div class="pp-modal">
+    <div class="pp-modal-header">
+      <div class="pp-modal-title" id="rls-form-title">Nova regra RLS</div>
+    </div>
+    <div class="rls-modal-banner">
+      <p id="rls-form-report-name"></p>
+      <small>Cada regra define o filtro aplicado a uma role específica do sistema.</small>
+    </div>
+    <form method="POST" id="form-rls">
+      <input type="hidden" name="rls_id" id="rls-id">
+      <label class="pp-label">Nome da regra <span style="color:var(--pp-gray300);font-weight:400">(identificação interna)</span></label>
+      <input class="pp-input" type="text" name="rule_name" id="rls-rule-name" placeholder="Ex: Filtro gerentes por revenda">
+      <label class="pp-label">Role do sistema que será filtrada</label>
+      <select class="pp-select" name="system_role" id="rls-system-role">
+        <option value="gerente">Gerente</option>
+        <option value="user">Usuário comum</option>
+        <option value="diretor">Diretor</option>
+        <option value="admin">Administrador</option>
+      </select>
+      <p class="pp-hint">Somente usuários desta role serão filtrados. As demais roles verão tudo.</p>
+      <label class="pp-label">Nome da role no Power BI</label>
+      <input class="pp-input" type="text" name="role_name" id="rls-role-name" placeholder="Ex: empresa_revenda" required>
+      <p class="pp-hint">Nome exato da função em Modelagem → Gerenciar funções no Power BI Desktop.</p>
+      <label class="pp-label">Campo de filtro do usuário</label>
+      <select class="pp-select" name="filter_source" id="rls-filter-source">
+        <option value="empresa_revenda">Revenda (empresa_revenda)</option>
+        <option value="departamento">Departamento (departamento)</option>
+        <option value="email">Email do usuário</option>
+      </select>
+      <label class="pp-label">Descrição <span style="color:var(--pp-gray300);font-weight:400">(opcional)</span></label>
+      <input class="pp-input" type="text" name="description" id="rls-description" placeholder="Ex: Gerentes só veem dados da própria revenda">
+      <div class="pp-modal-actions">
+        <button type="button" class="pp-btn pp-btn-outline" onclick="ppCloseModal('modal-rls-form')">Cancelar</button>
+        <button type="submit" class="pp-btn pp-btn-primary">Salvar regra</button>
+      </div>
+    </form>
   </div>
 </div>
 
 {% block extra_script %}
 <script>
-  var currentRole = null;
-  var currentTab  = 'groups';
-  var allGroups   = [];
-  var allReports  = [];
-  var searchQuery = '';
-  var allModules  = [];
-
-  // Carrega contagens dinamicamente
-  {% for r in active_roles %}
-  fetch('/admin/permissions/role/{{ r.key }}')
-    .then(function(res) { return res.json(); })
-    .then(function(data) {
-      var el = document.getElementById('count-{{ r.key }}');
-      if (el) el.textContent = data.user_count + ' usuário(s)';
-    });
-  {% endfor %}
-
-  function selectRole(role, el) {
-    currentRole = role; currentTab = 'groups'; searchQuery = '';
-    document.querySelectorAll('.role-item').forEach(function(i) { i.classList.remove('selected'); });
-    el.classList.add('selected');
-    var labels = { user: 'Usuário comum', gerente: 'Gerente', diretor: 'Diretor' };
-    document.getElementById('right-panel').innerHTML =
-      '<div class="right-header">' +
-        '<div class="right-title">Perfil: ' + labels[role] + '</div>' +
-        '<div class="right-sub">Acessos padrão para todos os usuários deste perfil</div>' +
-      '</div>' +
-      '<div class="pp-tabs">' +
-        '<button class="pp-tab-btn active" id="rtab-groups"  onclick="switchTab(\'groups\')">Grupos</button>' +
-        '<button class="pp-tab-btn"        id="rtab-reports" onclick="switchTab(\'reports\')">Relatórios</button>' +
-        '<button class="pp-tab-btn"        id="rtab-modules" onclick="switchTab(\'modules\')">Módulos do sistema</button>' +
-      '</div>' +
-      '<div class="list-search"><input id="role-item-search" placeholder="Buscar..." oninput="filterRoleItems()"/></div>' +
-      '<div class="item-list" id="role-item-list"><div class="loading">Carregando...</div></div>';
-    loadRolePermissions(role);
+  function toggleRLS(reportId) {
+    var panel = document.getElementById('rls-panel-' + reportId);
+    panel.classList.toggle('open');
   }
 
-  function switchTab(tab) {
-    currentTab = tab; searchQuery = '';
-    var el = document.getElementById('role-item-search');
-    if (el) el.value = '';
-    document.getElementById('rtab-groups').classList.toggle('active',  tab === 'groups');
-    document.getElementById('rtab-reports').classList.toggle('active', tab === 'reports');
-    document.getElementById('rtab-modules').classList.toggle('active', tab === 'modules');
-    renderRoleItems();
+  function openEdit(id, name, description, reportId, workspaceId, hasRls) {
+    document.getElementById('form-edit').action        = '/admin/reports/edit/' + id;
+    document.getElementById('edit-name').value         = name;
+    document.getElementById('edit-description').value  = description;
+    document.getElementById('edit-workspace').value    = workspaceId;
+    document.getElementById('edit-report').value       = reportId;
+    document.getElementById('edit-has-rls').checked    = hasRls;
+    ppOpenModal('modal-edit');
   }
 
-  function filterRoleItems() {
-    searchQuery = document.getElementById('role-item-search').value.toLowerCase();
-    renderRoleItems();
-  }
-
-  function loadRolePermissions(role) {
-    fetch('/admin/permissions/role/' + role)
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        allGroups  = data.groups;
-        allReports = data.reports;
-        allModules = data.modules;
-        renderRoleItems();
-      });
-  }
-
-  function renderRoleItems() {
-    if (currentTab === 'modules') {
-      renderModules('role');
-      return;
+  function openRLSForm(reportId, reportName, rlsId, ruleName, systemRole, roleName, filterSource, description) {
+    var isEdit = rlsId > 0;
+    document.getElementById('rls-form-title').textContent       = isEdit ? 'Editar regra RLS' : 'Nova regra RLS';
+    document.getElementById('rls-form-report-name').textContent  = reportName;
+    document.getElementById('form-rls').action                   = '/admin/reports/' + reportId + '/rls/save';
+    document.getElementById('rls-id').value                      = rlsId || '';
+    document.getElementById('rls-rule-name').value               = ruleName;
+    document.getElementById('rls-role-name').value               = roleName;
+    document.getElementById('rls-description').value             = description;
+    var selSys = document.getElementById('rls-system-role');
+    for (var i = 0; i < selSys.options.length; i++) {
+      if (selSys.options[i].value === systemRole) { selSys.selectedIndex = i; break; }
     }
-    var list = currentTab === 'groups' ? allGroups : allReports;
-    var icon = currentTab === 'groups' ? '📁' : '📊';
-    var type = currentTab === 'groups' ? 'group' : 'report';
-    var html = '';
-    list.forEach(function(item) {
-      if (searchQuery && !item.name.toLowerCase().includes(searchQuery)) return;
-      html +=
-        '<div class="perm-item">' +
-          '<div class="perm-icon">' + icon + '</div>' +
-          '<div class="perm-name">' + item.name + '</div>' +
-          '<button class="pp-toggle ' + (item.active ? 'on' : 'off') + '" ' +
-          'onclick="toggleRolePerm(this,\'' + currentRole + '\',\'' + type + '\',' + item.id + ')"></button>' +
-        '</div>';
-    });
-    if (!html) html = '<div class="empty-state" style="padding:40px"><div>🔍</div><div>Nenhum item encontrado.</div></div>';
-    document.getElementById('role-item-list').innerHTML = html;
+    var selFilter = document.getElementById('rls-filter-source');
+    for (var i = 0; i < selFilter.options.length; i++) {
+      if (selFilter.options[i].value === filterSource) { selFilter.selectedIndex = i; break; }
+    }
+    ppOpenModal('modal-rls-form');
   }
-
-  function renderModules(context) {
-    var html = '';
-    allModules.forEach(function(m) {
-      html +=
-        '<div class="perm-item">' +
-          '<div class="perm-icon">' + m.icon + '</div>' +
-          '<div class="perm-name">' + m.label + '</div>' +
-          '<button class="pp-toggle ' + (m.active ? 'on' : 'off') + '" ' +
-          'onclick="toggleModule(this,\'' + m.key + '\')"></button>' +
-        '</div>';
-    });
-    if (!html) html = '<div class="empty-state" style="padding:40px"><div>Nenhum módulo.</div></div>';
-    document.getElementById('role-item-list').innerHTML = html;
-  }
-
-  async function toggleModule(btn, moduleKey) {
-    var res  = await fetch('/admin/roles/toggle-module', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ role: currentRole, module: moduleKey })
-    });
-    var data = await res.json();
-    var nowOn = data.status === 'added';
-    btn.classList.toggle('on', nowOn);
-    btn.classList.toggle('off', !nowOn);
-    allModules.forEach(function(m) { if (m.key === moduleKey) m.active = nowOn; });
-  }
-
-  async function toggleRolePerm(btn, role, type, itemId) {
-    var body = { role: role };
-    if (type === 'group')  body.group_id  = itemId;
-    if (type === 'report') body.report_id = itemId;
-    var res  = await fetch('/admin/roles/toggle', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
-    var data = await res.json();
-    var nowOn = data.status === 'added';
-    btn.classList.toggle('on', nowOn); btn.classList.toggle('off', !nowOn);
-    var arr = type === 'group' ? allGroups : allReports;
-    arr.forEach(function(item) { if (item.id === itemId) item.active = nowOn; });
-  }
-  
 </script>
 {% endblock %}
 {% endblock %}
