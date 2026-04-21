@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Usuários{% endblock %}
+{% block title %}Cadastro de Perfis{% endblock %}
 {% block nav_links %}{% include "nav_admin.html" %}{% endblock %}
 
 {% block extra_style %}
@@ -20,6 +20,18 @@
   .filter-actions { display: flex; gap: 8px; align-items: flex-end; }
   .count-label { font-size: 12px; color: var(--pp-gray500); margin-bottom: 10px; }
   .actions-cell { display: flex; gap: 6px; }
+  .role-section { margin-bottom: 32px; }
+  .role-section-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 14px; padding-bottom: 10px;
+    border-bottom: 2px solid var(--pp-gray100);
+  }
+  .role-section-icon { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .role-section-icon.user    { background: #f0fdf4; }
+  .role-section-icon.gerente { background: #fef3c7; }
+  .role-section-icon.diretor { background: #dbeafe; }
+  .role-section-title { font-size: 15px; font-weight: 700; color: var(--pp-navy); }
+  .role-section-count { font-size: 12px; color: var(--pp-gray500); margin-left: auto; }
 </style>
 {% endblock %}
 
@@ -28,13 +40,14 @@
 <div class="pp-container">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
     <div>
-      <div class="pp-page-title">Usuários</div>
-      <div class="pp-page-sub">Gerencie os usuários do portal.</div>
+      <div class="pp-page-title">Cadastro de perfis</div>
+      <div class="pp-page-sub">Visualize e gerencie os usuários agrupados por perfil.</div>
     </div>
     <button class="pp-btn pp-btn-primary" onclick="ppOpenModal('modal-create')">+ Novo usuário</button>
   </div>
 
-  <form method="GET" action="/admin/users">
+  <!-- Filtros -->
+  <form method="GET" action="/admin/roles/users">
     <div class="filter-bar">
       <div class="filter-group" style="flex:2">
         <label>Buscar</label>
@@ -44,18 +57,10 @@
         <label>Perfil</label>
         <select name="role">
           <option value="">Todos</option>
-          {% for r in active_roles %}
-          <option value="{{ r.key }}">{{ r.label }}</option>
-          {% endfor %}
+          <option value="user"    {% if f_role=='user'    %}selected{% endif %}>Usuário</option>
+          <option value="gerente" {% if f_role=='gerente' %}selected{% endif %}>Gerente</option>
+          <option value="diretor" {% if f_role=='diretor' %}selected{% endif %}>Diretor</option>
         </select>
-      </div>
-      <div class="filter-group">
-        <label>Revenda</label>
-        <input type="text" name="revenda" value="{{ f_rev }}" placeholder="Ex: 1.18">
-      </div>
-      <div class="filter-group">
-        <label>Departamento</label>
-        <input type="text" name="departamento" value="{{ f_dep }}" placeholder="Ex: Financeiro">
       </div>
       <div class="filter-group">
         <label>Status</label>
@@ -67,71 +72,84 @@
       </div>
       <div class="filter-actions">
         <button type="submit" class="pp-btn pp-btn-primary pp-btn-sm">Filtrar</button>
-        <a href="/admin/users" class="pp-btn pp-btn-outline pp-btn-sm">Limpar</a>
+        <a href="/admin/roles/users" class="pp-btn pp-btn-outline pp-btn-sm">Limpar</a>
       </div>
     </div>
   </form>
 
   <div class="count-label">{{ users|length }} usuário(s) encontrado(s)</div>
 
-  <div class="pp-table-wrap">
-    <table class="pp-table">
-      <thead>
-        <tr>
-          <th>Nome</th>
-          <th>Email</th>
-          <th>Perfil</th>
-          <th>Revenda</th>
-          <th>Departamento</th>
-          <th>Status</th>
-          <th>Ações</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for u in users %}
-        <tr>
-          <td><strong>{{ u.name }}</strong></td>
-          <td style="color:var(--pp-gray500)">{{ u.email }}</td>
-          <td>
-            {% if u.is_admin %}
-              <span class="pp-badge pp-badge-navy">Admin</span>
-            {% elif u.role == 'gerente' %}
-              <span class="pp-badge pp-badge-warn">Gerente</span>
-            {% elif u.role == 'diretor' %}
-              <span class="pp-badge pp-badge-blue">Diretor</span>
-            {% else %}
-              <span class="pp-badge pp-badge-cyan">Usuário</span>
-            {% endif %}
-          </td>
-          <td>{{ u.empresa_revenda or '—' }}</td>
-          <td>{{ u.departamento or '—' }}</td>
-          <td>
-            {% if u.active %}
-              <span class="pp-badge pp-badge-success">Ativo</span>
-            {% else %}
-              <span class="pp-badge pp-badge-danger">Inativo</span>
-            {% endif %}
-          </td>
-          <td>
-            <div class="actions-cell">
-              <button class="pp-btn pp-btn-outline pp-btn-sm" onclick="openEditModal(
-                {{ u.id }},'{{ u.name }}','{{ u.email }}','{{ u.role }}',
-                '{{ u.empresa_revenda or '' }}','{{ u.departamento or '' }}',
-                {{ 'true' if u.is_admin else 'false' }},
-                {{ 'true' if u.active else 'false' }}
-              )">Editar</button>
-              <form method="POST" action="/admin/users/toggle/{{ u.id }}" style="display:inline">
-                <button class="pp-btn pp-btn-sm {% if u.active %}pp-btn-danger{% else %}pp-btn-outline{% endif %}">
-                  {% if u.active %}Desativar{% else %}Ativar{% endif %}
-                </button>
-              </form>
-            </div>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+  {% set roles_config = [
+    {'key': 'diretor',  'label': 'Diretores',       'icon': '👔', 'css': 'diretor'},
+    {'key': 'gerente',  'label': 'Gerentes',         'icon': '🏪', 'css': 'gerente'},
+    {'key': 'user',     'label': 'Usuários comuns',  'icon': '👤', 'css': 'user'},
+  ] %}
+
+  {% for rc in roles_config %}
+    {% set role_users = users | selectattr('role', 'equalto', rc.key) | list %}
+    {% if role_users or not f_role %}
+    <div class="role-section">
+      <div class="role-section-header">
+        <div class="role-section-icon {{ rc.css }}">{{ rc.icon }}</div>
+        <div class="role-section-title">{{ rc.label }}</div>
+        <span class="role-section-count">{{ role_users|length }} usuário(s)</span>
+      </div>
+
+      {% if role_users %}
+      <div class="pp-table-wrap">
+        <table class="pp-table">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Email</th>
+              <th>Revenda</th>
+              <th>Departamento</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in role_users %}
+            <tr>
+              <td><strong>{{ u.name }}</strong></td>
+              <td style="color:var(--pp-gray500)">{{ u.email }}</td>
+              <td>{{ u.empresa_revenda or '—' }}</td>
+              <td>{{ u.departamento or '—' }}</td>
+              <td>
+                {% if u.active %}
+                  <span class="pp-badge pp-badge-success">Ativo</span>
+                {% else %}
+                  <span class="pp-badge pp-badge-danger">Inativo</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="actions-cell">
+                  <button class="pp-btn pp-btn-outline pp-btn-sm" onclick="openEditModal(
+                    {{ u.id }},'{{ u.name }}','{{ u.email }}','{{ u.role }}',
+                    '{{ u.empresa_revenda or '' }}','{{ u.departamento or '' }}',
+                    {{ 'true' if u.is_admin else 'false' }},
+                    {{ 'true' if u.active else 'false' }}
+                  )">Editar</button>
+                  <form method="POST" action="/admin/users/toggle/{{ u.id }}" style="display:inline">
+                    <button class="pp-btn pp-btn-sm {% if u.active %}pp-btn-danger{% else %}pp-btn-outline{% endif %}">
+                      {% if u.active %}Desativar{% else %}Ativar{% endif %}
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div style="padding:20px;text-align:center;font-size:13px;color:var(--pp-gray300);background:#fff;border-radius:10px;border:1px solid var(--pp-gray100)">
+        Nenhum usuário com este perfil encontrado.
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+  {% endfor %}
 </div>
 
 <!-- Modal criar -->
@@ -150,9 +168,9 @@
       <input class="pp-input" type="password" name="password" required placeholder="Mínimo 8 caracteres">
       <label class="pp-label">Perfil</label>
       <select class="pp-select" name="role">
-        {% for r in active_roles %}
-        <option value="{{ r.key }}">{{ r.label }}</option>
-        {% endfor %}
+        <option value="user">Usuário comum</option>
+        <option value="gerente">Gerente</option>
+        <option value="diretor">Diretor</option>
       </select>
       <div class="pp-form-row">
         <div>
@@ -191,9 +209,9 @@
       <input class="pp-input" type="password" name="password" placeholder="Mínimo 8 caracteres">
       <label class="pp-label">Perfil</label>
       <select class="pp-select" name="role" id="edit-role">
-        {% for r in active_roles %}
-        <option value="{{ r.key }}">{{ r.label }}</option>
-        {% endfor %}
+        <option value="user">Usuário comum</option>
+        <option value="gerente">Gerente</option>
+        <option value="diretor">Diretor</option>
       </select>
       <div class="pp-form-row">
         <div>
