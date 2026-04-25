@@ -178,6 +178,11 @@
       {% endif %}
     </select>
 
+    <button class="pp-btn pp-btn-outline pp-btn-sm" id="btn-clear-filters"
+      onclick="clearSearch()" style="display:none;white-space:nowrap">
+      ✕ Limpar filtros
+    </button>
+
     <span class="search-results-count" id="results-count"></span>
   </div>
   {% endif %}
@@ -383,13 +388,6 @@
     document.getElementById('group-filter').value  = '';
     document.getElementById('search-clear').style.display     = 'none';
     document.getElementById('btn-clear-filters').style.display = 'none';
-    applyFilters();
-  }
-
-  function clearSearch() {
-    document.getElementById('search-input').value = '';
-    document.getElementById('group-filter').value = '';
-    document.getElementById('search-clear').style.display = 'none';
     applyFilters();
   }
 
