@@ -50,14 +50,21 @@ def admin_logs():
             query = query.filter(AccessLog.accessed_at < datetime.strptime(f_date_to, "%Y-%m-%d") + timedelta(days=1))
         except Exception:
             pass
+    
+    # Paginação nos logs
+    page     = request.args.get("page", 1, type=int)
+    per_page = 50
+    paginate = query.order_by(AccessLog.accessed_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    logs = paginate.items
 
-    logs        = query.order_by(AccessLog.accessed_at.desc()).limit(500).all()
     all_users   = User.query.filter_by(active=True).order_by(User.name).all()
     all_reports = Report.query.filter_by(active=True).order_by(Report.name).all()
     all_roles   = Role.query.filter_by(active=True).order_by(Role.label).all()
 
     return render_template("admin_logs.html",
-        user=user, logs=logs,
+        user=user, logs=logs, paginate=paginate,
         all_users=all_users, all_reports=all_reports, all_roles=all_roles,
         f_q=f_q, f_user=f_user, f_role=f_role, f_report=f_report,
         f_date_from=f_date_from, f_date_to=f_date_to)
