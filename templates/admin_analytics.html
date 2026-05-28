@@ -19,6 +19,16 @@
   .filter-group input:focus, .filter-group select:focus { border-color: var(--pp-cyan); }
   .filter-actions { display: flex; gap: 8px; align-items: flex-end; }
 
+  /* Badge período customizado */
+  .period-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--pp-ice); color: var(--pp-blue);
+    border: 1px solid #BFDBFE; border-radius: 8px;
+    padding: 6px 12px; font-size: 12px; font-weight: 500;
+    margin-bottom: 16px;
+  }
+  .period-badge strong { color: var(--pp-navy); }
+
   /* Cards */
   .analytics-grid {
     display: grid; grid-template-columns: repeat(4, 1fr);
@@ -44,19 +54,13 @@
     background: #fff; border-radius: 10px;
     border: 1px solid var(--pp-gray100); padding: 20px;
     box-shadow: 0 1px 4px rgba(13,27,42,0.04);
-    transition: border-color 0.2s;
   }
-  .chart-title { font-size: 13px; font-weight: 700; color: var(--pp-navy); margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+  .chart-title { font-size: 13px; font-weight: 700; color: var(--pp-navy); margin-bottom: 4px; }
   .chart-sub   { font-size: 11px; color: var(--pp-gray500); margin-bottom: 16px; }
-  .active-filter-pill.visible { display: inline-flex; align-items: center; gap: 4px; }
 
   /* Rankings */
   .rank-list { display: flex; flex-direction: column; gap: 6px; }
-  .rank-item {
-    display: flex; align-items: center; gap: 10px;
-    padding: 8px 10px; border-radius: 8px;
-    transition: all 0.2s; border: 1px solid transparent;
-  }
+  .rank-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; }
   .rank-pos {
     width: 22px; height: 22px; border-radius: 50%;
     background: var(--pp-gray100); color: var(--pp-gray500);
@@ -74,10 +78,9 @@
   .rank-bar-fill { height: 100%; background: var(--pp-accent); border-radius: 2px; transition: width 0.4s ease; }
   .rank-count    { font-size: 12px; font-weight: 700; color: var(--pp-navy); text-align: right; margin-bottom: 2px; }
 
-  /* Filtro ativo banner */
-  .drill-banner.visible { display: flex; }
-  .drill-tags { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
-  .drill-tag:hover { opacity: 0.85; }
+  /* Datas customizadas — aparecem/somem com JS */
+  .custom-date-group { transition: opacity 0.2s; }
+  .custom-date-group.hidden { display: none; }
 
   @media (max-width: 900px) {
     .analytics-grid { grid-template-columns: 1fr 1fr; }
@@ -95,23 +98,47 @@
       <div class="pp-page-title">Analytics</div>
       <div class="pp-page-sub">Insights de uso do portal.</div>
     </div>
-    <a href="/admin/logs" class="pp-btn pp-btn-outline pp-btn-sm">📋 Ver logs detalhados</a>
+    <a href="{{ url_for('admin_logs.admin_logs') }}"
+       class="pp-btn pp-btn-outline pp-btn-sm">📋 Ver logs detalhados</a>
   </div>
 
-  <!-- Filtros do topo -->
-  <form method="GET" action="/admin/analytics" id="filter-form">
+  <!-- Filtros -->
+  <form method="GET" action="{{ url_for('admin_logs.admin_analytics') }}" id="filter-form">
     <div class="filter-bar">
+
+      <!-- Período rápido -->
       <div class="filter-group">
         <label>Período</label>
-        <select name="days">
-          <option value="1"  {% if f_days==1  %}selected{% endif %}>Hoje</option>
-          <option value="7"  {% if f_days==7  %}selected{% endif %}>Últimos 7 dias</option>
-          <option value="15" {% if f_days==15 %}selected{% endif %}>Últimos 15 dias</option>
-          <option value="30" {% if f_days==30 %}selected{% endif %}>Últimos 30 dias</option>
-          <option value="60" {% if f_days==60 %}selected{% endif %}>Últimos 60 dias</option>
-          <option value="90" {% if f_days==90 %}selected{% endif %}>Últimos 90 dias</option>
+        <select name="days" id="days-select" onchange="toggleCustomDates()">
+          <option value="1"      {% if f_days=='1'      %}selected{% endif %}>Hoje</option>
+          <option value="7"      {% if f_days=='7'      %}selected{% endif %}>Últimos 7 dias</option>
+          <option value="15"     {% if f_days=='15'     %}selected{% endif %}>Últimos 15 dias</option>
+          <option value="30"     {% if f_days=='30' or not f_days %}selected{% endif %}>Últimos 30 dias</option>
+          <option value="60"     {% if f_days=='60'     %}selected{% endif %}>Últimos 60 dias</option>
+          <option value="90"     {% if f_days=='90'     %}selected{% endif %}>Últimos 90 dias</option>
+          <option value="custom" {% if f_days=='custom' %}selected{% endif %}>Personalizado...</option>
         </select>
       </div>
+
+      <!-- Date pickers — visíveis só em modo custom -->
+      <div class="filter-group custom-date-group {% if f_days != 'custom' %}hidden{% endif %}"
+           id="wrap-date-from">
+        <label>De</label>
+        <input type="date" name="date_from" id="input-date-from"
+               value="{{ f_date_from }}"
+               max="{{ data_fim }}"
+               onchange="validateDates()">
+      </div>
+      <div class="filter-group custom-date-group {% if f_days != 'custom' %}hidden{% endif %}"
+           id="wrap-date-to">
+        <label>Até</label>
+        <input type="date" name="date_to" id="input-date-to"
+               value="{{ f_date_to }}"
+               min="{{ f_date_from }}"
+               onchange="validateDates()">
+      </div>
+
+      <!-- Outros filtros -->
       <div class="filter-group">
         <label>Usuário</label>
         <select name="user_id">
@@ -139,12 +166,25 @@
           {% endfor %}
         </select>
       </div>
+
       <div class="filter-actions">
         <button type="submit" class="pp-btn pp-btn-primary pp-btn-sm">Filtrar</button>
-        <a href="/admin/analytics" class="pp-btn pp-btn-outline pp-btn-sm">Limpar</a>
+        <a href="{{ url_for('admin_logs.admin_analytics') }}"
+           class="pp-btn pp-btn-outline pp-btn-sm">Limpar</a>
       </div>
     </div>
   </form>
+
+  <!-- Badge mostrando o período ativo -->
+  {% if f_days == 'custom' and f_date_from and f_date_to %}
+  <div class="period-badge">
+    📅 Período personalizado:
+    <strong>{{ f_date_from.split('-')|reverse|join('/') }}</strong>
+    até
+    <strong>{{ f_date_to.split('-')|reverse|join('/') }}</strong>
+    — {{ acessos_dia|length }} dia(s)
+  </div>
+  {% endif %}
 
   <!-- Cards de resumo -->
   <div class="analytics-grid">
@@ -176,11 +216,17 @@
 
   <!-- Acessos por dia -->
   <div class="charts-row charts-row-1">
-    <div class="chart-card" id="card-dia">
-      <div class="chart-title">
-        📈 Acessos por dia
+    <div class="chart-card">
+      <div class="chart-title">📈 Acessos por dia</div>
+      <div class="chart-sub">
+        {% if f_days == 'custom' %}
+          Período: {{ f_date_from.split('-')|reverse|join('/') }} a {{ f_date_to.split('-')|reverse|join('/') }}
+        {% elif f_days == '1' %}
+          Hoje
+        {% else %}
+          Últimos {{ f_days }} dias
+        {% endif %}
       </div>
-      <div class="chart-sub">Clique em um dia para filtrar os rankings abaixo</div>
       <div style="height:200px"><canvas id="chart-dia"></canvas></div>
     </div>
   </div>
@@ -190,12 +236,10 @@
     <div class="chart-card">
       <div class="chart-title">🏆 Relatórios mais acessados</div>
       <div class="chart-sub">Top 10 no período</div>
-      <div class="rank-list" id="rank-reports">
+      <div class="rank-list">
         {% set max_r = top_reports[0].total if top_reports else 1 %}
         {% for r in top_reports %}
-        <div class="rank-item"
-          data-report-id="{{ r.id }}"
-          data-total="{{ r.total }}">
+        <div class="rank-item">
           <div class="rank-pos {% if loop.index==1 %}top1{% elif loop.index==2 %}top2{% elif loop.index==3 %}top3{% endif %}">{{ loop.index }}</div>
           <div class="rank-info">
             <div class="rank-name" title="{{ r.name }}">{{ r.name }}</div>
@@ -216,13 +260,10 @@
     <div class="chart-card">
       <div class="chart-title">👥 Usuários mais ativos</div>
       <div class="chart-sub">Top 10 no período</div>
-      <div class="rank-list" id="rank-users">
+      <div class="rank-list">
         {% set max_u = top_users[0].total if top_users else 1 %}
         {% for u in top_users %}
-        <div class="rank-item"
-          data-user-id="{{ u.id }}"
-          data-role="{{ u.role }}"
-          data-total="{{ u.total }}">
+        <div class="rank-item">
           <div class="rank-pos {% if loop.index==1 %}top1{% elif loop.index==2 %}top2{% elif loop.index==3 %}top3{% endif %}">{{ loop.index }}</div>
           <div class="rank-info">
             <div class="rank-name" title="{{ u.name }}">{{ u.name }}</div>
@@ -245,27 +286,20 @@
   <!-- Hora + semana + perfil -->
   <div class="charts-row charts-row-3">
     <div style="display:flex;flex-direction:column;gap:16px">
-      <div class="chart-card" id="card-hora">
-        <div class="chart-title">
-          ⏰ Acessos por hora do dia
-        </div>
-        <div class="chart-sub">Clique para filtrar os rankings</div>
+      <div class="chart-card">
+        <div class="chart-title">⏰ Acessos por hora do dia</div>
+        <div class="chart-sub">Distribuição horária no período</div>
         <div style="height:160px"><canvas id="chart-hora"></canvas></div>
       </div>
-      <div class="chart-card" id="card-semana">
-        <div class="chart-title">
-          📅 Por dia da semana
-        </div>
-        <div class="chart-sub">Clique para filtrar os rankings</div>
+      <div class="chart-card">
+        <div class="chart-title">📅 Por dia da semana</div>
+        <div class="chart-sub">Distribuição semanal no período</div>
         <div style="height:140px"><canvas id="chart-semana"></canvas></div>
       </div>
     </div>
-
-    <div class="chart-card" id="card-perfil">
-      <div class="chart-title">
-        🎭 Por perfil
-      </div>
-      <div class="chart-sub">Clique para filtrar os rankings</div>
+    <div class="chart-card">
+      <div class="chart-title">🎭 Por perfil</div>
+      <div class="chart-sub">Distribuição de acessos por perfil</div>
       <div style="height:300px"><canvas id="chart-perfil"></canvas></div>
     </div>
   </div>
@@ -275,6 +309,7 @@
 {% block extra_script %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
+  // ── Dados ─────────────────────────────────────────────────────
   var dadosDia    = {{ acessos_dia    | tojson }};
   var dadosHora   = {{ acessos_hora   | tojson }};
   var dadosSemana = {{ acessos_semana | tojson }};
@@ -288,7 +323,7 @@
   Chart.defaults.color       = '#7A8899';
   Chart.defaults.plugins.legend.display = false;
 
-  // Acessos por dia
+  // ── Gráficos ──────────────────────────────────────────────────
   new Chart(document.getElementById('chart-dia'), {
     type: 'line',
     data: {
@@ -296,11 +331,10 @@
         var p = d.dia.split('-'); return p[2]+'/'+p[1];
       }),
       datasets: [{
-        data:            dadosDia.map(function(d) { return d.total; }),
-        borderColor:     CYAN,
-        backgroundColor: CYAN+'18',
-        borderWidth: 2, pointRadius: 3, pointHoverRadius: 5,
-        pointBackgroundColor: CYAN,
+        data: dadosDia.map(function(d) { return d.total; }),
+        borderColor: CYAN, backgroundColor: CYAN+'18',
+        borderWidth: 2, pointRadius: dadosDia.length > 60 ? 1 : 3,
+        pointHoverRadius: 5, pointBackgroundColor: CYAN,
         fill: true, tension: 0.4
       }]
     },
@@ -311,13 +345,12 @@
         label: function(i) { return i.raw + ' acesso(s)'; }
       }}},
       scales: {
-        x: { grid: { display: false }, ticks: { maxTicksLimit: 10 } },
+        x: { grid: { display: false }, ticks: { maxTicksLimit: 15 } },
         y: { grid: { color: '#EEF2F7' }, beginAtZero: true, ticks: { precision: 0 } }
       }
     }
   });
 
-  // Acessos por hora
   new Chart(document.getElementById('chart-hora'), {
     type: 'bar',
     data: {
@@ -343,7 +376,6 @@
     }
   });
 
-  // Por dia da semana
   new Chart(document.getElementById('chart-semana'), {
     type: 'bar',
     data: {
@@ -367,7 +399,6 @@
     }
   });
 
-  // Por perfil
   new Chart(document.getElementById('chart-perfil'), {
     type: 'doughnut',
     data: {
@@ -395,6 +426,43 @@
       }
     }
   });
+
+  // ── Date picker customizado ───────────────────────────────────
+  function toggleCustomDates() {
+    var val    = document.getElementById('days-select').value;
+    var show   = val === 'custom';
+    var groups = document.querySelectorAll('.custom-date-group');
+    groups.forEach(function(el) {
+      el.classList.toggle('hidden', !show);
+    });
+    // Se abriu o custom e não há datas, preenche com últimos 30 dias
+    if (show) {
+      var from = document.getElementById('input-date-from');
+      var to   = document.getElementById('input-date-to');
+      if (!from.value || !to.value) {
+        var hoje  = new Date();
+        var ini   = new Date(hoje);
+        ini.setDate(ini.getDate() - 30);
+        to.value   = hoje.toISOString().split('T')[0];
+        from.value = ini.toISOString().split('T')[0];
+        to.min     = from.value;
+      }
+    }
+  }
+
+  function validateDates() {
+    var from = document.getElementById('input-date-from');
+    var to   = document.getElementById('input-date-to');
+    // Garante que "Até" seja sempre >= "De"
+    if (from.value && to.value && to.value < from.value) {
+      to.value = from.value;
+    }
+    if (from.value) { to.min = from.value; }
+    if (to.value)   { from.max = to.value; }
+  }
+
+  // Inicializa estado correto ao carregar
+  toggleCustomDates();
 </script>
 {% endblock %}
 {% endblock %}
