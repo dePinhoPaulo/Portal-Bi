@@ -3,6 +3,7 @@ import os
 import msal
 from datetime import datetime, timedelta
 from threading import Lock
+from typing import Optional, Tuple
 
 TENANT_ID     = os.getenv("TENANT_ID")
 CLIENT_ID     = os.getenv("CLIENT_ID")
@@ -73,7 +74,7 @@ def _make_cache_key(report_id: str, user, has_rls: bool) -> str:
         return f"embed_{report_id}_norls"
 
 
-def _get_cached_embed(cache_key: str) -> dict | None:
+def _get_cached_embed(cache_key: str) -> Optional[dict]:
     """Retorna embed token do cache se ainda válido, None caso contrário."""
     with _cache_lock:
         cached = _embed_token_cache.get(cache_key)
@@ -108,7 +109,7 @@ def clear_embed_cache(report_id: str = None) -> None:
             print("[PowerBI] Cache de embed tokens completamente limpo")
 
 
-def get_user_value(user, filter_source: str) -> str | None:
+def get_user_value(user, filter_source: str) -> Optional[str]:
     """Retorna o valor do campo do usuário conforme filter_source."""
     if filter_source == "empresa_revenda":
         return user.empresa_revenda

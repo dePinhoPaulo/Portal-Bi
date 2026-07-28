@@ -1,7 +1,8 @@
 import bcrypt
 import re
+from typing import Optional, Tuple
 
-def validate_password(password: str) -> tuple[bool, str]:
+def validate_password(password: str) -> Tuple[bool, str]:
     """Retorna (válido, mensagem_de_erro)."""
     if len(password) < 8:
         return False, "A senha deve ter pelo menos 8 caracteres."

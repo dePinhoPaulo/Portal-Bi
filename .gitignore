@@ -4,3 +4,4 @@ __pycache__/
 Token.txt
 mappings/
 reports/
+*.pbix
