@@ -49,12 +49,12 @@ def handle_rate_limit(e):
 @jwt.expired_token_loader
 def expired_token_callback(jwt_header, jwt_payload):
     from flask import redirect, url_for
-    return redirect(url_for("login"))
+    return redirect(url_for("auth.login"))
 
 @jwt.unauthorized_loader
 def unauthorized_callback(error):
     from flask import redirect, url_for
-    return redirect(url_for("login"))
+    return redirect(url_for("auth.login"))
 
 from models import init_models, create_tables
 (User, Report, ReportRLS, Group, ReportGroup,
