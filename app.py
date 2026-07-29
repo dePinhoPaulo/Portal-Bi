@@ -132,7 +132,9 @@ init_routes(app, db, mail, limiter,
 
 if __name__ == "__main__":
     with app.app_context():
-        create_tables(db)
+        limiter.limit("10 per minute")(app.view_functions["auth.login"])
+        limiter.limit("5 per minute")(app.view_functions["auth.forgot_password"])
+        limiter.limit("5 per minute")(app.view_functions["auth.reset_password"])
     app.run(
         debug  = not IS_PROD,
         host   = "0.0.0.0",
