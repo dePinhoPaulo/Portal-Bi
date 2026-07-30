@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block nav %}{% endblock %}
+{% block title %}Página não encontrada{% endblock %}
+
+{% block extra_style %}
+<style>
+  body { display:flex; align-items:center; justify-content:center; min-height:100vh; }
+  .error-card { background:#fff; border-radius:14px; padding:48px 40px; width:100%; max-width:440px; border:1px solid var(--pp-gray100); box-shadow:0 8px 40px rgba(13,27,42,0.1); text-align:center; }
+  .error-code { font-size:72px; font-weight:800; color:var(--pp-gray100); line-height:1; margin-bottom:8px; }
+  .error-title { font-size:20px; font-weight:700; color:var(--pp-navy); margin-bottom:8px; }
+  .error-sub { font-size:14px; color:var(--pp-gray500); margin-bottom:28px; line-height:1.6; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="error-card">
+  <div class="error-code">404</div>
+  <div class="error-title">Página não encontrada</div>
+  <div class="error-sub">A página que você está procurando não existe ou foi movida.</div>
+  <a href="{{ url_for('dashboard.dashboard') }}" class="pp-btn pp-btn-primary"
+     style="display:inline-flex">← Voltar ao dashboard</a>
+</div>
+{% endblock %}
+{% block footer %}{% endblock %}

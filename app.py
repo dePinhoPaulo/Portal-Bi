@@ -122,6 +122,16 @@ def inject_globals():
         pass
     return base
 
+@app.errorhandler(404)
+def not_found(e):
+    from flask import render_template
+    return render_template("error_404.html"), 404
+
+@app.errorhandler(500)
+def server_error(e):
+    from flask import render_template
+    return render_template("error_500.html"), 500
+
 from routes import init_routes
 init_routes(app, db, mail, limiter,
             User, Report, ReportRLS, Group, ReportGroup,
