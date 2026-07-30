@@ -424,6 +424,56 @@
     btn.title = on ? 'Remover dos favoritos' : 'Adicionar aos favoritos';
     btn.style.opacity = '1'; btn.style.pointerEvents = '';
   }
+  
+  // ── Auto-refresh do token Power BI ──────────────────────────
+  // O token dura 1h. Renova a cada 50 min para nunca expirar durante o uso.
+  var pbiReport = null;
+
+  window.addEventListener('load', function() {
+    var models = window['powerbi-client'].models;
+    var config = {
+      type: 'report',
+      id: '{{ embed.report_id }}',
+      embedUrl: '{{ embed.embed_url }}',
+      accessToken: '{{ embed.embed_token }}',
+      tokenType: models.TokenType.Embed,
+      settings: {
+        panes: {
+          filters:        { visible: true },
+          pageNavigation: { visible: true }
+        }
+      }
+    };
+    var container = document.getElementById('pbi-frame');
+    container.style.width  = '100%';
+    container.style.height = '100%';
+    pbiReport = powerbi.embed(container, config);
+
+    // Renova o token 10 minutos antes de expirar (50 min = 3.000.000 ms)
+    setTimeout(function renewToken() {
+      fetch('/report/{{ report.id }}/refresh-token', { method: 'POST' })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.token && pbiReport) {
+            pbiReport.setAccessToken(data.token)
+              .then(function() {
+                console.log('[PowerBI] Token renovado com sucesso.');
+              })
+              .catch(function(err) {
+                console.warn('[PowerBI] Falha ao renovar token:', err);
+              });
+          }
+          // Agenda próxima renovação
+          setTimeout(renewToken, 50 * 60 * 1000);
+        })
+        .catch(function(err) {
+          console.warn('[PowerBI] Erro ao buscar novo token:', err);
+          // Tenta novamente em 5 minutos se falhar
+          setTimeout(renewToken, 5 * 60 * 1000);
+        });
+    }, 50 * 60 * 1000);
+  });
+
 </script>
 {% endblock %}
 {% endblock %}

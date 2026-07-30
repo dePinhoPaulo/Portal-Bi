@@ -83,3 +83,29 @@ def reorder_favorites():
             fav.position = i
     db.session.commit()
     return jsonify({"status": "ok"})
+
+@dashboard_bp.route("/report/<int:report_id>/refresh-token", methods=["POST"])
+@jwt_required()
+def refresh_embed_token(report_id):
+    ctx       = dashboard_bp.ctx
+    db        = ctx["db"]
+    User      = ctx["User"]
+    Report    = ctx["Report"]
+    ReportRLS = ctx["ReportRLS"]
+    user_id   = int(get_jwt_identity())
+    user      = db.session.get(User, user_id)
+    report    = db.session.get(Report, report_id)
+
+    if not report or not can_access_report(ctx, user, report_id):
+        return jsonify({"error": "Sem acesso"}), 403
+
+    # Força geração de novo token limpando o cache
+    from powerbi import clear_embed_cache, get_embed_token
+    clear_embed_cache(str(report.report_id))
+
+    rls_configs = ReportRLS.query.filter_by(report_id=report_id).all()
+    embed_data  = get_embed_token(
+        report.workspace_id, report.report_id,
+        user=user, has_rls=report.has_rls, rls_configs=rls_configs
+    )
+    return jsonify({"token": embed_data.get("embed_token")})
